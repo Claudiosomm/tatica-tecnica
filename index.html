@@ -3,10 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>⚽ Tática técnica</title>
-<link rel="stylesheet" href="style.css">
+<title>⚽ Tática</title>
 <script defer src="script.js"></script>
-
+<link rel="stylesheet" href="style.css">
 
 </head>
 <body>
@@ -53,7 +52,7 @@
         <option value="4-1-4-1">4-1-4-1</option>
         <option value="4-3-2-1">4-3-2-1</option>
       </select>
-      <button class="btn-reset" onclick="renderField()" title="Resetar posições">↺</button>
+      <button class="btn-reset" onclick="resetPositions()" title="Resetar posições">↺</button>
     </div>
     <div class="pitch-container" id="pitch-container">
       <svg class="pitch-svg" viewBox="0 0 340 520" xmlns="http://www.w3.org/2000/svg">
@@ -157,5 +156,6 @@
   </div>
   <div class="pin-msg" id="change-msg"></div>
 </div>
+
 </body>
 </html>
