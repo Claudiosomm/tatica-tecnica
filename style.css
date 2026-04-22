@@ -1,5 +1,4 @@
-
-  @import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Barlow:wght@400;600;700&display=swap');
 
   :root {
     --accent: #f0c040; --accent2: #e05a2b;
@@ -60,6 +59,8 @@
   .field-player { position: absolute; display: flex; flex-direction: column; align-items: center; transform: translate(-50%,-50%); cursor: grab; transition: top .35s cubic-bezier(.34,1.56,.64,1), left .35s cubic-bezier(.34,1.56,.64,1); z-index: 10; user-select: none; -webkit-user-select: none; }
   .field-player.is-dragging { transition: none; cursor: grabbing; z-index: 50; }
   .field-player.is-dragging .field-dot { transform: scale(1.25); box-shadow: 0 6px 20px rgba(0,0,0,.7); }
+  .field-player.selected .field-dot { box-shadow: 0 0 0 4px #fff, 0 0 0 7px var(--accent); transform: scale(1.1); }
+  .field-player.selected .field-name { color: var(--accent); }
   .field-dot { width: 34px; height: 34px; border-radius: 50%; background: var(--player-color); border: 3px solid var(--player-border); display: flex; align-items: center; justify-content: center; font-family: 'Bebas Neue', cursive; font-size: 13px; color: #111; box-shadow: 0 3px 10px rgba(0,0,0,.5); transition: transform .15s; flex-shrink: 0; }
   .field-player.gk .field-dot { background: #e05a2b; border-color: #b84520; color: #fff; }
   .field-name { margin-top: 3px; font-size: 9px; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,.9); max-width: 52px; text-align: center; line-height: 1.1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
