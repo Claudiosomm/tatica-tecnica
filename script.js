@@ -200,39 +200,87 @@
   });
 
   // ── FIELD DRAG ─────────────────────────────────────────────────────────────
-  let fDragEl = null, fOffX = 0, fOffY = 0;
+  // Modo: toque curto = seleciona; toque no campo livre = move selecionado
+  // Arrasto longo também funciona, sem mover a tela
+  let fSelected = null;   // bolinha selecionada (tap-to-move)
+  let fDragEl = null;     // bolinha sendo arrastada agora
+  let fOffX = 0, fOffY = 0;
+  let fTouchMoved = false;
+
+  function clampPos(v) { return Math.max(2, Math.min(98, v)); }
+
+  function selectPlayer(el) {
+    // Deseleciona anterior
+    document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
+    if (fSelected === el) { fSelected = null; return; } // clique duplo = deseleciona
+    fSelected = el;
+    el.classList.add('selected');
+  }
+
   function attachFieldDrag(el) {
+    // TOUCH
     el.addEventListener('touchstart', e => {
-      fDragEl = e.currentTarget; fDragEl.classList.add('is-dragging');
+      e.stopPropagation();
+      fTouchMoved = false;
+      fDragEl = el;
+      fDragEl.classList.add('is-dragging');
       const r = document.getElementById('pitch-container').getBoundingClientRect();
       const t = e.touches[0];
       fOffX = t.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
       fOffY = t.clientY - r.top  - parseFloat(fDragEl.style.top) /100 * r.height;
     }, { passive: true });
+
+    el.addEventListener('touchend', e => {
+      e.stopPropagation();
+      if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; }
+      if (!fTouchMoved) selectPlayer(el); // tap sem mover = seleciona
+      else { fSelected = null; document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected')); savePositions(); }
+    });
+
+    // MOUSE
     el.addEventListener('mousedown', e => {
-      fDragEl = e.currentTarget; fDragEl.classList.add('is-dragging');
+      fDragEl = el; fDragEl.classList.add('is-dragging');
       const r = document.getElementById('pitch-container').getBoundingClientRect();
       fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
       fOffY = e.clientY - r.top  - parseFloat(fDragEl.style.top) /100 * r.height;
       e.preventDefault();
     });
   }
+
+  // Touch move em qualquer lugar: move bolinha se estiver arrastando
   document.addEventListener('touchmove', e => {
     if (!fDragEl) return;
+    fTouchMoved = true;
+    e.preventDefault(); // TRAVA O SCROLL DA TELA
     const r = document.getElementById('pitch-container').getBoundingClientRect();
     const t = e.touches[0];
-    fDragEl.style.left = Math.max(2, Math.min(98, (t.clientX - r.left - fOffX) / r.width  * 100)) + '%';
-    fDragEl.style.top  = Math.max(2, Math.min(98, (t.clientY - r.top  - fOffY) / r.height * 100)) + '%';
-  }, { passive: true });
+    fDragEl.style.left = clampPos((t.clientX - r.left - fOffX) / r.width  * 100) + '%';
+    fDragEl.style.top  = clampPos((t.clientY - r.top  - fOffY) / r.height * 100) + '%';
+  }, { passive: false }); // passive:false permite preventDefault
+
   document.addEventListener('mousemove', e => {
     if (!fDragEl) return;
     const r = document.getElementById('pitch-container').getBoundingClientRect();
-    fDragEl.style.left = Math.max(2, Math.min(98, (e.clientX - r.left - fOffX) / r.width  * 100)) + '%';
-    fDragEl.style.top  = Math.max(2, Math.min(98, (e.clientY - r.top  - fOffY) / r.height * 100)) + '%';
+    fDragEl.style.left = clampPos((e.clientX - r.left - fOffX) / r.width  * 100) + '%';
+    fDragEl.style.top  = clampPos((e.clientY - r.top  - fOffY) / r.height * 100) + '%';
   });
-  function stopFDrag() { if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; } }
-  document.addEventListener('touchend', stopFDrag);
-  document.addEventListener('mouseup', stopFDrag);
+  document.addEventListener('mouseup', e => {
+    if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; savePositions(); }
+  });
+
+  // Toque no campo LIVRE move a bolinha selecionada
+  document.getElementById('pitch-container').addEventListener('touchend', e => {
+    if (!fSelected || fDragEl) return;
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    const t = e.changedTouches[0];
+    // Só age se o toque foi dentro do campo
+    if (t.clientX < r.left || t.clientX > r.right || t.clientY < r.top || t.clientY > r.bottom) return;
+    fSelected.style.left = clampPos((t.clientX - r.left) / r.width  * 100) + '%';
+    fSelected.style.top  = clampPos((t.clientY - r.top)  / r.height * 100) + '%';
+    fSelected.classList.remove('selected');
+    fSelected = null;
+    savePositions();
+  });
 
   // ── FORMATIONS ─────────────────────────────────────────────────────────────
   const FORMATIONS = {
@@ -254,21 +302,41 @@
   }
 
   // ── FIELD RENDER ───────────────────────────────────────────────────────────
-  function applyFormation() { renderField(); saveData(); }
+  function applyFormation() {
+    // Ao trocar formação, limpa posições salvas e redesenha
+    try { localStorage.removeItem('tatica_positions'); } catch(e) {}
+    renderField();
+    saveData();
+  }
+
   function renderField() {
     const key = document.getElementById('formation-select').value;
-    const pos = getPositions(key);
+    const defaultPos = getPositions(key);
     const fp = document.getElementById('field-players');
     fp.innerHTML = '';
-    const n = Math.min(pos.length, players.length);
+    fSelected = null;
+
+    // Tenta carregar posições salvas
+    let savedPos = null;
+    try {
+      const sp = localStorage.getItem('tatica_positions');
+      if (sp) savedPos = JSON.parse(sp);
+    } catch(e) {}
+
+    const n = Math.min(defaultPos.length, players.length);
     players.slice(0, n).forEach((p, i) => {
       const el = document.createElement('div');
       el.className = 'field-player' + (i === 0 ? ' gk' : '');
-      el.style.left = (pos[i].x * 100) + '%';
-      el.style.top  = (pos[i].y * 100) + '%';
+      el.dataset.index = i;
+      // Usa posição salva se existir para esse índice, senão usa padrão
+      const pos = (savedPos && savedPos[i]) ? savedPos[i] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
+      el.style.left = pos.x + '%';
+      el.style.top  = pos.y + '%';
       el.innerHTML = `<div class="field-dot">${i+1}</div><div class="field-name">${esc(shortName(p.name))}</div>`;
-      attachFieldDrag(el); fp.appendChild(el);
+      attachFieldDrag(el);
+      fp.appendChild(el);
     });
+
     const bench = document.getElementById('bench-list');
     const bp = players.slice(n);
     bench.innerHTML = bp.length ? bp.map((p,i) => `<div class="bench-chip"><span>${n+i+1}</span>${esc(shortName(p.name))}</div>`).join('') : '<span class="bench-empty">Todos em campo</span>';
@@ -277,12 +345,26 @@
       bench.innerHTML = '<span class="bench-empty">—</span>';
     }
   }
-  function updateFieldNames() {
+
+  function savePositions() {
+    // Salva posição atual de cada bolinha
+    const els = document.querySelectorAll('.field-player');
+    const pos = [];
+    els.forEach(el => {
+      pos.push({ x: parseFloat(el.style.left), y: parseFloat(el.style.top) });
+    });
+    try { localStorage.setItem('tatica_positions', JSON.stringify(pos)); } catch(e) {}
+  }
+
+  function resetPositions() {
+    try { localStorage.removeItem('tatica_positions'); } catch(e) {}
+    renderField();
+  }
     document.querySelectorAll('.field-player').forEach((el, i) => {
       const n = el.querySelector('.field-name');
       if (n && players[i]) n.textContent = shortName(players[i].name);
     });
-  }
+  
   function shortName(name) {
     if (!name) return '?';
     const p = name.trim().split(' ');
