@@ -127,9 +127,23 @@ function switchTab(tab, btn) {
 function toggleStatus(id) {
   const player = players.find(p => p.id === id);
   if (!player) return;
+
   const estados = ['indefinido', 'veio', 'faltou'];
   let atual = player.status || 'indefinido';
-  player.status = estados[(estados.indexOf(atual) + 1) % 3];
+  let proximo = estados[(estados.indexOf(atual) + 1) % 3];
+
+  player.status = proximo;
+
+  // Se virou 'faltou' = vermelho, manda pro final da lista
+  if (proximo === 'faltou') {
+    const index = players.findIndex(p => p.id === id);
+    if (index > -1) {
+      const [jogador] = players.splice(index, 1);
+      players.push(jogador);
+    }
+  }
+  // Se virou 'veio' = verde, não mexe na posição
+
   saveData();
   renderPlayerList();
 }
@@ -484,8 +498,15 @@ function updateFieldNames() {
 
 function shortName(name) {
   if (!name) return '?';
-  const p = name.trim().split(' ');
-  return p.length === 1? p[0] : p[p.length - 1];
+  const n = name.trim();
+  if (n.length <= 16) return n; // mostra até 16 letras completo
+
+  const parts = n.split(' ');
+  if (parts.length > 1) {
+    // Nome + inicial do último sobrenome: "João Silva" vira "João S."
+    return parts[0] + ' ' + parts[parts.length-1][0] + '.';
+  }
+  return n.substring(0, 16);
 }
 
 // ── SAVE / LOAD ────────────────────────────────────────────────────────────
