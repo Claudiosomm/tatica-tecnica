@@ -220,7 +220,6 @@ function dropNoCampo(ev) {
   const id = parseInt(ev.dataTransfer.getData("id"));
   const player = players.find(p => p.id === id);
 
-  // Se o jogador já está em campo, é só reposicionamento — ignora
   if (!player || player.emCampo) return;
 
   const emCampo = players.filter(p => p.emCampo).length;
@@ -251,11 +250,11 @@ function dropNaReserva(ev) {
 function substituirJogador(id) {
   const player = players.find(p => p.id === id);
   if (!player) return;
-  
+
   player.emCampo = false;
   saveData();
   renderField();
-  renderPlayerList(); // atualiza a lista também
+  renderPlayerList();
 }
 
 // ── FIELD DRAG ─────────────────────────────────────────────────────────────
@@ -269,25 +268,21 @@ function selectPlayer(el) {
 }
 
 function attachFieldDrag(el) {
-
-  // ── DESKTOP: duplo clique = manda pro banco ─────────────────────────────
   el.addEventListener('dblclick', (e) => {
     e.stopPropagation();
     substituirJogador(parseInt(el.dataset.id));
   });
 
-  // ── DESKTOP: mousedown no corpo = reposicionar no campo ─────────────────
   el.addEventListener('mousedown', e => {
-    if (e.button !== 0 || e.target.closest('.field-dot')) return;
+    if (e.button!== 0 || e.target.closest('.field-dot')) return;
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
     const r = document.getElementById('pitch-container').getBoundingClientRect();
     fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left) / 100 * r.width;
-    fOffY = e.clientY - r.top  - parseFloat(fDragEl.style.top)  / 100 * r.height;
+    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) / 100 * r.height;
     e.preventDefault();
   });
 
-  // ── DESKTOP: drag nativo na bolinha = arrastar pro banco ─────────────────
   const dot = el.querySelector('.field-dot');
   dot.draggable = true;
   dot.addEventListener('mousedown', e => e.stopPropagation());
@@ -302,13 +297,6 @@ function attachFieldDrag(el) {
     e.stopPropagation();
   });
 
-  // ── MOBILE: touch ───────────────────────────────────────────────────────
-  // toque simples         → nada
-  // segurar 500ms         → seleciona (vibra) e habilita arrastar pro banco
-  // arrastar após segurar → se soltar fora do campo, manda pro banco
-  // arrastar sem segurar  → reposiciona no campo
-  // duplo toque           → manda direto pro banco
-
   el.addEventListener('touchstart', e => {
     e.stopPropagation();
     fTouchMoved = false;
@@ -318,9 +306,8 @@ function attachFieldDrag(el) {
     const r = document.getElementById('pitch-container').getBoundingClientRect();
     fDragEl = el;
     fOffX = t.clientX - r.left - parseFloat(el.style.left) / 100 * r.width;
-    fOffY = t.clientY - r.top  - parseFloat(el.style.top)  / 100 * r.height;
+    fOffY = t.clientY - r.top - parseFloat(el.style.top) / 100 * r.height;
 
-    // Long press: após 500ms habilita modo arrastar-pro-banco
     longPressTimer = setTimeout(() => {
       longPressEl = el;
       touchReadyToDrag = true;
@@ -339,7 +326,6 @@ function attachFieldDrag(el) {
     fDragEl.classList.remove('is-dragging');
 
     if (!fTouchMoved) {
-      // Toque rápido sem mover — detecta duplo toque
       const now = Date.now();
       const timeSince = now - lastTap;
       if (timeSince < 300 && timeSince > 0) {
@@ -350,21 +336,18 @@ function attachFieldDrag(el) {
         lastTap = now;
       }
     } else {
-      // Arrastou
       if (touchReadyToDrag) {
         const r = document.getElementById('pitch-container').getBoundingClientRect();
         const t = e.changedTouches[0];
         const dentroDoCampo = t.clientX >= r.left && t.clientX <= r.right &&
-                              t.clientY >= r.top  && t.clientY <= r.bottom;
+                              t.clientY >= r.top && t.clientY <= r.bottom;
         if (!dentroDoCampo) {
-          // Soltou fora do campo = manda pro banco
           document.querySelectorAll('.field-player.selected').forEach(x => x.classList.remove('selected'));
           substituirJogador(parseInt(el.dataset.id));
           fDragEl = null; longPressEl = null; touchReadyToDrag = false;
           return;
         }
       }
-      // Soltou dentro do campo = salva posição
       document.querySelectorAll('.field-player.selected').forEach(x => x.classList.remove('selected'));
       fSelected = null;
       savePositions();
@@ -397,7 +380,6 @@ document.addEventListener('mouseup', e => {
     if (!isNativeDrag) savePositions();
     fDragEl = null;
   }
-  // Não zera isNativeDrag aqui — o dragend da bolinha já faz isso
 });
 
 document.getElementById('pitch-container').addEventListener('touchend', e => {
@@ -477,6 +459,8 @@ function renderField() {
     </div>
   `).join('') : '<span class="bench-empty">Todos em campo</span>';
 
+  ativarTouchBanco(); // ← ESSENCIAL PRO MOBILE FUNCIONAR
+
   if (!players.length) {
     fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
     bench.innerHTML = '<span class="bench-empty">—</span>';
@@ -532,3 +516,70 @@ document.getElementById('formation-select').addEventListener('change', saveData)
 
 renderLoginDots();
 renderPlayerList();
+
+// ── FIX: ATIVA TOUCH NO BANCO ────────────────────────────────────────────────
+function ativarTouchBanco() {
+  document.querySelectorAll('.bench-chip').forEach(chip => {
+    chip.replaceWith(chip.cloneNode(true));
+  });
+
+  document.querySelectorAll('.bench-chip').forEach(chip => {
+    let startX, startY, arrastando = false;
+    let clone = null;
+    const id = parseInt(chip.dataset.id);
+
+    chip.addEventListener('touchstart', (e) => {
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      arrastando = true;
+
+      clone = chip.cloneNode(true);
+      clone.style.position = 'fixed';
+      clone.style.opacity = '0.7';
+      clone.style.pointerEvents = 'none';
+      clone.style.zIndex = '9999';
+      clone.style.left = startX - 30 + 'px';
+      clone.style.top = startY - 15 + 'px';
+      document.body.appendChild(clone);
+      chip.style.opacity = '0.3';
+    }, {passive: false});
+
+    document.addEventListener('touchmove', (e) => {
+      if (!arrastando ||!clone) return;
+      e.preventDefault();
+      const touch = e.touches[0];
+      clone.style.left = touch.clientX - 30 + 'px';
+      clone.style.top = touch.clientY - 15 + 'px';
+    }, {passive: false});
+
+    document.addEventListener('touchend', (e) => {
+      if (!arrastando) return;
+      arrastando = false;
+      chip.style.opacity = '1';
+
+      const touch = e.changedTouches[0];
+      const campo = document.getElementById('pitch-container');
+      const campoBox = campo.getBoundingClientRect();
+
+      if (touch.clientX >= campoBox.left && touch.clientX <= campoBox.right &&
+          touch.clientY >= campoBox.top && touch.clientY <= campoBox.bottom) {
+
+        const player = players.find(p => p.id === id);
+        if (player &&!player.emCampo) {
+          const emCampo = players.filter(p => p.emCampo).length;
+          if (emCampo < 11) {
+            player.emCampo = true;
+            player.x = ((touch.clientX - campoBox.left) / campoBox.width) * 100;
+            player.y = ((touch.clientY - campoBox.top) / campoBox.height) * 100;
+            saveData();
+            renderField();
+          }
+        }
+      }
+
+      if (clone) clone.remove();
+      clone = null;
+    });
+  });
+}
