@@ -69,8 +69,9 @@
   .legend-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid; }
   .legend-dot.pl { background: var(--player-color); border-color: var(--player-border); }
   .legend-dot.gk { background: var(--accent2); border-color: #b84520; }
-  .bench-section { margin-top: 14px; background: var(--panel2); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; }
-  .bench-title { font-family: 'Bebas Neue', cursive; font-size: 14px; letter-spacing: 2px; color: var(--gray); margin-bottom: 8px; }
+  .bench-section { margin-top: 14px; background: var(--panel2); border: 1.5px solid var(--border); border-radius: 10px; padding: 12px 14px; transition: border-color .2s, background .2s; }
+.bench-section.drag-over { border-color: var(--accent); background: rgba(240,192,64,.07); }
+.bench-title { font-family: 'Bebas Neue', cursive; font-size: 14px; letter-spacing: 2px; color: var(--gray); margin-bottom: 8px; }
   .bench-list { display: flex; flex-wrap: wrap; gap: 6px; }
   .bench-chip { background: rgba(255,255,255,.06); border: 1px solid var(--border); border-radius: 20px; padding: 4px 10px; font-size: 12px; font-weight: 600; color: var(--gray); display: flex; align-items: center; gap: 5px; }
   .bench-chip span { font-family: 'Bebas Neue', cursive; font-size: 13px; color: var(--accent); }
