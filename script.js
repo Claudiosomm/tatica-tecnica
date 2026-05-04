@@ -5,6 +5,7 @@ let senhaAcesso = localStorage.getItem('tatica_senha') || '0905';
 // ── STATE ──────────────────────────────────────────────────────────────────
 let players = [], nextId = 1, dragSrcIndex = null;
 let fSelected = null, fDragEl = null, fOffX = 0, fOffY = 0, fTouchMoved = false;
+let isDraggingToBench = false;
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────
 let loginEntry = '';
@@ -247,17 +248,67 @@ function clampPos(v) { return Math.max(2, Math.min(98, v)); }
 
 function selectPlayer(el) {
   document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
+  // Remover tooltip anterior se existir
+  const oldTooltip = document.getElementById('field-tooltip');
+  if (oldTooltip) oldTooltip.remove();
+
   if (fSelected === el) { fSelected = null; return; }
   fSelected = el;
   el.classList.add('selected');
+
+  // Mostrar botão "→ Banco"
+  const tooltip = document.createElement('div');
+  tooltip.id = 'field-tooltip';
+  tooltip.innerHTML = '→ Banco';
+  tooltip.style.cssText = `
+    position:absolute;
+    left:${el.style.left};
+    top:calc(${el.style.top} + 28px);
+    transform:translate(-50%,0);
+    background:#111;
+    color:var(--accent);
+    border:1.5px solid var(--accent);
+    border-radius:12px;
+    padding:4px 10px;
+    font-size:11px;
+    font-weight:700;
+    cursor:pointer;
+    z-index:60;
+    white-space:nowrap;
+    pointer-events:all;
+  `;
+  tooltip.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const id = parseInt(el.dataset.id);
+    const player = players.find(p => p.id === id);
+    if (player) {
+      player.emCampo = false;
+      saveData();
+      renderField();
+    }
+  });
+  document.getElementById('field-players').appendChild(tooltip);
 }
 
 function attachFieldDrag(el) {
+  // Detecta se está arrastando pra reserva ou reposicionando
+  el.addEventListener('mousedown', e => {
+    if (e.button!== 0) return;
+    fDragEl = el;
+    fDragEl.classList.add('is-dragging');
+    isDraggingToBench = false;
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
+    e.preventDefault();
+  });
+
   el.addEventListener('touchstart', e => {
     e.stopPropagation();
     fTouchMoved = false;
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
+    isDraggingToBench = false;
     const r = document.getElementById('pitch-container').getBoundingClientRect();
     const t = e.touches[0];
     fOffX = t.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
@@ -265,23 +316,64 @@ function attachFieldDrag(el) {
   }, { passive: true });
 
   el.addEventListener('touchend', e => {
+    if (!fDragEl) return;
     e.stopPropagation();
-    if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; }
-    if (!fTouchMoved) selectPlayer(el);
-    else { fSelected = null; document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected')); savePositions(); }
+    fDragEl.classList.remove('is-dragging');
+
+    if (fTouchMoved) {
+      // Verificar se soltou sobre a área do banco
+      const touch = e.changedTouches[0];
+      const bench = document.getElementById('bench-list');
+      const benchRect = bench.getBoundingClientRect();
+      const benchSection = document.querySelector('.bench-section');
+      const benchSectionRect = benchSection ? benchSection.getBoundingClientRect() : null;
+
+      const overBench = (
+        touch.clientX >= benchRect.left && touch.clientX <= benchRect.right &&
+        touch.clientY >= benchRect.top && touch.clientY <= benchRect.bottom
+      ) || (benchSectionRect &&
+        touch.clientX >= benchSectionRect.left && touch.clientX <= benchSectionRect.right &&
+        touch.clientY >= benchSectionRect.top && touch.clientY <= benchSectionRect.bottom
+      );
+
+      if (overBench) {
+        const id = parseInt(fDragEl.dataset.id);
+        const player = players.find(p => p.id === id);
+        if (player) {
+          player.emCampo = false;
+          saveData();
+          renderField();
+          fDragEl = null;
+          isDraggingToBench = false;
+          return;
+        }
+      }
+
+      fSelected = null;
+      document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
+      savePositions();
+    } else {
+      selectPlayer(el);
+    }
+    fDragEl = null;
   });
 
-  el.addEventListener('mousedown', e => {
-    fDragEl = el; fDragEl.classList.add('is-dragging');
-    const r = document.getElementById('pitch-container').getBoundingClientRect();
-    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
-    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
-    e.preventDefault();
+  // Drag HTML5 pra reserva - só na bolinha
+  const dot = el.querySelector('.field-dot');
+  dot.draggable = true;
+  dot.addEventListener('dragstart', (e) => {
+    e.dataTransfer.setData("id", el.dataset.id);
+    e.dataTransfer.effectAllowed = "move";
+    isDraggingToBench = true;
+  });
+  dot.addEventListener('dragend', () => {
+    isDraggingToBench = false;
+    fDragEl = null;
   });
 }
 
 document.addEventListener('touchmove', e => {
-  if (!fDragEl) return;
+  if (!fDragEl || isDraggingToBench) return;
   fTouchMoved = true;
   e.preventDefault();
   const r = document.getElementById('pitch-container').getBoundingClientRect();
@@ -291,17 +383,28 @@ document.addEventListener('touchmove', e => {
 }, { passive: false });
 
 document.addEventListener('mousemove', e => {
-  if (!fDragEl) return;
+  if (!fDragEl || isDraggingToBench) return;
   const r = document.getElementById('pitch-container').getBoundingClientRect();
   fDragEl.style.left = clampPos((e.clientX - r.left - fOffX) / r.width * 100) + '%';
   fDragEl.style.top = clampPos((e.clientY - r.top - fOffY) / r.height * 100) + '%';
 });
 
 document.addEventListener('mouseup', e => {
-  if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; savePositions(); }
+  if (fDragEl) {
+    fDragEl.classList.remove('is-dragging');
+    if (!isDraggingToBench) savePositions();
+    // Não zera fDragEl aqui se estiver arrastando pro banco
+    // o dragend cuida disso
+    if (!isDraggingToBench) fDragEl = null;
+    if (!isDraggingToBench) isDraggingToBench = false;
+  }
 });
 
 document.getElementById('pitch-container').addEventListener('touchend', e => {
+  // Remover tooltip ao tocar fora
+  const oldTooltip = document.getElementById('field-tooltip');
+  if (oldTooltip) oldTooltip.remove();
+
   if (!fSelected || fDragEl) return;
   const r = document.getElementById('pitch-container').getBoundingClientRect();
   const t = e.changedTouches[0];
@@ -346,6 +449,9 @@ function renderField() {
   const fp = document.getElementById('field-players');
   fp.innerHTML = '';
   fSelected = null;
+  // Limpar tooltip se existir
+  const oldTooltip = document.getElementById('field-tooltip');
+  if (oldTooltip) oldTooltip.remove();
 
   let savedPos = null;
   try {
@@ -363,8 +469,6 @@ function renderField() {
     const pos = (savedPos && savedPos[i])? savedPos[i] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
     el.style.left = pos.x + '%';
     el.style.top = pos.y + '%';
-    el.draggable = true;
-    el.ondragstart = (e) => e.dataTransfer.setData("id", p.id);
     el.innerHTML = `<div class="field-dot">${i+1}</div><div class="field-name">${esc(shortName(p.name))}</div>`;
     attachFieldDrag(el);
     fp.appendChild(el);
