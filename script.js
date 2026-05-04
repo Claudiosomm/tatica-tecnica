@@ -4,10 +4,6 @@ let senhaAcesso = localStorage.getItem('tatica_senha') || '0905';
 
 // ── STATE ──────────────────────────────────────────────────────────────────
 let players = [], nextId = 1, dragSrcIndex = null;
-let fSelected = null, fDragEl = null, fOffX = 0, fOffY = 0, fTouchMoved = false;
-let isNativeDrag = false;
-let lastTap = 0;
-let longPressTimer = null, longPressEl = null, touchReadyToDrag = false;
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────
 let loginEntry = '';
@@ -43,7 +39,8 @@ function loginDel() {
 }
 
 // ── CHANGE PASSWORD ────────────────────────────────────────────────────────
-let changeStep = 'master', changeEntry = '', newSenhaTemp = '';
+let changeStep = 'master';
+let changeEntry = '', newSenhaTemp = '';
 const STEP_LEN = { master: SENHA_MESTRE.length, new: 4, confirm: 4 };
 function renderChangeDots() {
   const c = document.getElementById('change-dots');
@@ -135,7 +132,6 @@ function toggleStatus(id) {
   player.status = estados[(estados.indexOf(atual) + 1) % 3];
   saveData();
   renderPlayerList();
-  renderField();
 }
 
 // ── PLAYERS ────────────────────────────────────────────────────────────────
@@ -204,60 +200,42 @@ function drop(e, ti) {
   dragSrcIndex = null; renderPlayerList(); saveData();
 }
 
-// ── DRAG CAMPO ↔ BANCO ─────────────────────────────────────────────────────
-function allowDrop(ev) {
-  ev.preventDefault();
-  ev.currentTarget.classList.add('drag-over');
-}
-
-function dragLeave(ev) {
-  ev.currentTarget.classList.remove('drag-over');
-}
-
-function dropNoCampo(ev) {
-  ev.preventDefault();
-  ev.currentTarget.classList.remove('drag-over');
-  const id = parseInt(ev.dataTransfer.getData("id"));
-  const player = players.find(p => p.id === id);
-
-  if (!player || player.emCampo) return;
-
-  const emCampo = players.filter(p => p.emCampo).length;
-  if (emCampo >= 11) {
-    alert('Máximo de 11 jogadores em campo!');
-    return;
+// ── TOUCH LIST DRAG ────────────────────────────────────────────────────────
+let tSrc = null, tClone = null, tTarget = null;
+document.addEventListener('touchstart', e => {
+  const item = e.target.closest('.player-item');
+  if (!item ||!e.target.classList.contains('drag-handle')) return;
+  tSrc = parseInt(item.dataset.index); item.classList.add('dragging');
+  tClone = item.cloneNode(true);
+  tClone.style.cssText = `position:fixed;opacity:.85;pointer-events:none;z-index:999;width:${item.offsetWidth}px;border-color:#f0c040;left:${e.touches[0].clientX - item.offsetWidth/2}px;top:${e.touches[0].clientY-22}px;background:#192219;border-radius:8px;`;
+  document.body.appendChild(tClone);
+}, { passive: true });
+document.addEventListener('touchmove', e => {
+  if (tSrc === null) return;
+  const t = e.touches[0];
+  if (tClone) { tClone.style.left = (t.clientX - tClone.offsetWidth/2)+'px'; tClone.style.top = (t.clientY-22)+'px'; }
+  const el = document.elementFromPoint(t.clientX, t.clientY);
+  const item = el && el.closest('.player-item');
+  document.querySelectorAll('.player-item').forEach(i => i.classList.remove('drag-over'));
+  if (item) { tTarget = parseInt(item.dataset.index); item.classList.add('drag-over'); } else tTarget = null;
+}, { passive: true });
+document.addEventListener('touchend', e => {
+  if (tSrc === null) return;
+  document.querySelectorAll('.player-item').forEach(i => i.classList.remove('dragging','drag-over'));
+  if (tClone) { tClone.remove(); tClone = null; }
+  if (tTarget!== null && tTarget!== tSrc) {
+    players.splice(tTarget, 0, players.splice(tSrc, 1)[0]);
+    renderPlayerList(); saveData();
   }
-
-  player.emCampo = true;
-  saveData();
-  renderField();
-}
-
-function dropNaReserva(ev) {
-  ev.preventDefault();
-  ev.stopPropagation();
-  ev.currentTarget.classList.remove('drag-over');
-  const id = parseInt(ev.dataTransfer.getData("id"));
-  const player = players.find(p => p.id === id);
-  if (player) {
-    player.emCampo = false;
-    saveData();
-    renderField();
-  }
-}
-
-// ── SUBSTITUIR JOGADOR = VOLTAR PRO BANCO ───────────────────────────────────
-function substituirJogador(id) {
-  const player = players.find(p => p.id === id);
-  if (!player) return;
-
-  player.emCampo = false;
-  saveData();
-  renderField();
-  renderPlayerList();
-}
+  tSrc = null; tTarget = null;
+});
 
 // ── FIELD DRAG ─────────────────────────────────────────────────────────────
+let fSelected = null;
+let fDragEl = null;
+let fOffX = 0, fOffY = 0;
+let fTouchMoved = false;
+
 function clampPos(v) { return Math.max(2, Math.min(98, v)); }
 
 function selectPlayer(el) {
@@ -268,97 +246,35 @@ function selectPlayer(el) {
 }
 
 function attachFieldDrag(el) {
-  el.addEventListener('dblclick', (e) => {
-    e.stopPropagation();
-    substituirJogador(parseInt(el.dataset.id));
-  });
-
-  el.addEventListener('mousedown', e => {
-    if (e.button!== 0 || e.target.closest('.field-dot')) return;
-    fDragEl = el;
-    fDragEl.classList.add('is-dragging');
-    const r = document.getElementById('pitch-container').getBoundingClientRect();
-    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left) / 100 * r.width;
-    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) / 100 * r.height;
-    e.preventDefault();
-  });
-
-  const dot = el.querySelector('.field-dot');
-  dot.draggable = true;
-  dot.addEventListener('mousedown', e => e.stopPropagation());
-  dot.addEventListener('dragstart', e => {
-    isNativeDrag = true;
-    e.dataTransfer.setData('id', el.dataset.id);
-    e.dataTransfer.effectAllowed = 'move';
-    e.stopPropagation();
-  });
-  dot.addEventListener('dragend', e => {
-    isNativeDrag = false;
-    e.stopPropagation();
-  });
-
   el.addEventListener('touchstart', e => {
     e.stopPropagation();
     fTouchMoved = false;
-    touchReadyToDrag = false;
-
-    const t = e.touches[0];
-    const r = document.getElementById('pitch-container').getBoundingClientRect();
     fDragEl = el;
-    fOffX = t.clientX - r.left - parseFloat(el.style.left) / 100 * r.width;
-    fOffY = t.clientY - r.top - parseFloat(el.style.top) / 100 * r.height;
-
-    longPressTimer = setTimeout(() => {
-      longPressEl = el;
-      touchReadyToDrag = true;
-      el.classList.add('selected');
-      if (navigator.vibrate) navigator.vibrate(60);
-    }, 500);
-
+    fDragEl.classList.add('is-dragging');
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    const t = e.touches[0];
+    fOffX = t.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = t.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
   }, { passive: true });
 
   el.addEventListener('touchend', e => {
-    clearTimeout(longPressTimer);
-    longPressTimer = null;
-
-    if (!fDragEl) return;
     e.stopPropagation();
-    fDragEl.classList.remove('is-dragging');
+    if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; }
+    if (!fTouchMoved) selectPlayer(el);
+    else { fSelected = null; document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected')); savePositions(); }
+  });
 
-    if (!fTouchMoved) {
-      const now = Date.now();
-      const timeSince = now - lastTap;
-      if (timeSince < 300 && timeSince > 0) {
-        document.querySelectorAll('.field-player.selected').forEach(x => x.classList.remove('selected'));
-        substituirJogador(parseInt(el.dataset.id));
-        lastTap = 0;
-      } else {
-        lastTap = now;
-      }
-    } else {
-      if (touchReadyToDrag) {
-        const r = document.getElementById('pitch-container').getBoundingClientRect();
-        const t = e.changedTouches[0];
-        const dentroDoCampo = t.clientX >= r.left && t.clientX <= r.right &&
-                              t.clientY >= r.top && t.clientY <= r.bottom;
-        if (!dentroDoCampo) {
-          document.querySelectorAll('.field-player.selected').forEach(x => x.classList.remove('selected'));
-          substituirJogador(parseInt(el.dataset.id));
-          fDragEl = null; longPressEl = null; touchReadyToDrag = false;
-          return;
-        }
-      }
-      document.querySelectorAll('.field-player.selected').forEach(x => x.classList.remove('selected'));
-      fSelected = null;
-      savePositions();
-    }
-
-    fDragEl = null; longPressEl = null; touchReadyToDrag = false;
+  el.addEventListener('mousedown', e => {
+    fDragEl = el; fDragEl.classList.add('is-dragging');
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
+    e.preventDefault();
   });
 }
 
 document.addEventListener('touchmove', e => {
-  if (!fDragEl || isNativeDrag) return;
+  if (!fDragEl) return;
   fTouchMoved = true;
   e.preventDefault();
   const r = document.getElementById('pitch-container').getBoundingClientRect();
@@ -368,18 +284,13 @@ document.addEventListener('touchmove', e => {
 }, { passive: false });
 
 document.addEventListener('mousemove', e => {
-  if (!fDragEl || isNativeDrag) return;
+  if (!fDragEl) return;
   const r = document.getElementById('pitch-container').getBoundingClientRect();
   fDragEl.style.left = clampPos((e.clientX - r.left - fOffX) / r.width * 100) + '%';
   fDragEl.style.top = clampPos((e.clientY - r.top - fOffY) / r.height * 100) + '%';
 });
-
 document.addEventListener('mouseup', e => {
-  if (fDragEl) {
-    fDragEl.classList.remove('is-dragging');
-    if (!isNativeDrag) savePositions();
-    fDragEl = null;
-  }
+  if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; savePositions(); }
 });
 
 document.getElementById('pitch-container').addEventListener('touchend', e => {
@@ -407,7 +318,6 @@ const FORMATIONS = {
   "4-1-4-1": [[1,[50]],[4,[20,38,62,80]],[1,[50]],[4,[20,38,62,80]],[1,[50]]],
   "4-3-2-1": [[1,[50]],[4,[20,38,62,80]],[3,[28,50,72]],[2,[35,65]],[1,[50]]]
 };
-
 function getPositions(key) {
   const lines = FORMATIONS[key]; if (!lines) return [];
   const n = lines.length, top = 0.04, bot = 0.96, span = bot - top;
@@ -434,14 +344,11 @@ function renderField() {
     if (sp) savedPos = JSON.parse(sp);
   } catch(e) {}
 
-  const emCampo = players.filter(p => p.emCampo);
-  const n = Math.min(defaultPos.length, emCampo.length);
-
-  emCampo.slice(0, n).forEach((p, i) => {
+  const n = Math.min(defaultPos.length, players.length);
+  players.slice(0, n).forEach((p, i) => {
     const el = document.createElement('div');
     el.className = 'field-player' + (i === 0? ' gk' : '');
-    el.dataset.id = p.id;
-    el.draggable = true;
+    el.dataset.index = i;
     const pos = (savedPos && savedPos[i])? savedPos[i] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
     el.style.left = pos.x + '%';
     el.style.top = pos.y + '%';
@@ -451,16 +358,8 @@ function renderField() {
   });
 
   const bench = document.getElementById('bench-list');
-  const reservas = players.filter(p =>!p.emCampo);
-  bench.innerHTML = reservas.length? reservas.map(p => `
-    <div class="bench-chip" draggable="true" data-id="${p.id}" data-status="${p.status || 'indefinido'}"
-         ondragstart="event.dataTransfer.setData('id', ${p.id})">
-      ${esc(shortName(p.name))}
-    </div>
-  `).join('') : '<span class="bench-empty">Todos em campo</span>';
-
-  ativarTouchBanco(); // ← ESSENCIAL PRO MOBILE FUNCIONAR
-
+  const bp = players.slice(n);
+  bench.innerHTML = bp.length? bp.map((p,i) => `<div class="bench-chip"><span>${n+i+1}</span>${esc(shortName(p.name))}</div>`).join('') : '<span class="bench-empty">Todos em campo</span>';
   if (!players.length) {
     fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
     bench.innerHTML = '<span class="bench-empty">—</span>';
@@ -482,11 +381,9 @@ function resetPositions() {
 }
 
 function updateFieldNames() {
-  document.querySelectorAll('.field-player').forEach((el) => {
-    const id = parseInt(el.dataset.id);
-    const p = players.find(pl => pl.id === id);
+  document.querySelectorAll('.field-player').forEach((el, i) => {
     const n = el.querySelector('.field-name');
-    if (n && p) n.textContent = shortName(p.name);
+    if (n && players[i]) n.textContent = shortName(players[i].name);
   });
 }
 
@@ -516,70 +413,3 @@ document.getElementById('formation-select').addEventListener('change', saveData)
 
 renderLoginDots();
 renderPlayerList();
-
-// ── FIX: ATIVA TOUCH NO BANCO ────────────────────────────────────────────────
-function ativarTouchBanco() {
-  document.querySelectorAll('.bench-chip').forEach(chip => {
-    chip.replaceWith(chip.cloneNode(true));
-  });
-
-  document.querySelectorAll('.bench-chip').forEach(chip => {
-    let startX, startY, arrastando = false;
-    let clone = null;
-    const id = parseInt(chip.dataset.id);
-
-    chip.addEventListener('touchstart', (e) => {
-      const touch = e.touches[0];
-      startX = touch.clientX;
-      startY = touch.clientY;
-      arrastando = true;
-
-      clone = chip.cloneNode(true);
-      clone.style.position = 'fixed';
-      clone.style.opacity = '0.7';
-      clone.style.pointerEvents = 'none';
-      clone.style.zIndex = '9999';
-      clone.style.left = startX - 30 + 'px';
-      clone.style.top = startY - 15 + 'px';
-      document.body.appendChild(clone);
-      chip.style.opacity = '0.3';
-    }, {passive: false});
-
-    document.addEventListener('touchmove', (e) => {
-      if (!arrastando ||!clone) return;
-      e.preventDefault();
-      const touch = e.touches[0];
-      clone.style.left = touch.clientX - 30 + 'px';
-      clone.style.top = touch.clientY - 15 + 'px';
-    }, {passive: false});
-
-    document.addEventListener('touchend', (e) => {
-      if (!arrastando) return;
-      arrastando = false;
-      chip.style.opacity = '1';
-
-      const touch = e.changedTouches[0];
-      const campo = document.getElementById('pitch-container');
-      const campoBox = campo.getBoundingClientRect();
-
-      if (touch.clientX >= campoBox.left && touch.clientX <= campoBox.right &&
-          touch.clientY >= campoBox.top && touch.clientY <= campoBox.bottom) {
-
-        const player = players.find(p => p.id === id);
-        if (player &&!player.emCampo) {
-          const emCampo = players.filter(p => p.emCampo).length;
-          if (emCampo < 11) {
-            player.emCampo = true;
-            player.x = ((touch.clientX - campoBox.left) / campoBox.width) * 100;
-            player.y = ((touch.clientY - campoBox.top) / campoBox.height) * 100;
-            saveData();
-            renderField();
-          }
-        }
-      }
-
-      if (clone) clone.remove();
-      clone = null;
-    });
-  });
-}
