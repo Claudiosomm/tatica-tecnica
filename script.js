@@ -396,7 +396,8 @@ function renderField() {
     if (sp) savedPos = JSON.parse(sp);
   } catch(e) {}
 
-  const emCampo = players.filter(p => p.emCampo);
+  // MUDANÇA: filtra 'faltou' do campo também
+  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou');
   const n = Math.min(defaultPos.length, emCampo.length);
 
   emCampo.slice(0, n).forEach((p, i) => {
@@ -423,7 +424,8 @@ function renderField() {
   });
 
   const bench = document.getElementById('bench-list');
-  const reservas = players.filter(p =>!p.emCampo);
+  // MUDANÇA: filtra 'faltou' do banco também
+  const reservas = players.filter(p =>!p.emCampo && p.status!== 'faltou');
   bench.innerHTML = reservas.length? reservas.map(p => `
     <div class="bench-chip" draggable="true" data-id="${p.id}"
          ondragstart="event.dataTransfer.setData('text/plain', ${p.id})">
@@ -435,6 +437,26 @@ function renderField() {
     fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
     bench.innerHTML = '<span class="bench-empty">—</span>';
   }
+}
+
+function dropNoCampo(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  const id = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === id);
+
+  // MUDANÇA: bloqueia se for 'faltou'
+  if (!player || player.emCampo || player.status === 'faltou') return;
+
+  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou').length;
+  if (emCampo >= 11) {
+    alert('Máximo de 11 jogadores em campo!');
+    return;
+  }
+
+  player.emCampo = true;
+  saveData();
+  renderField();
 }
 
 function savePositions() {
