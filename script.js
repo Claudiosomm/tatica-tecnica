@@ -134,6 +134,57 @@ function toggleStatus(id) {
   renderPlayerList();
 }
 
+// ── TROCA BANCO ↔ CAMPO ────────────────────────────────────────────────────
+function dropNoCampo(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+  const id = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === id);
+
+  if (!player || player.emCampo) return;
+
+  const emCampo = players.filter(p => p.emCampo).length;
+  if (emCampo >= 11) {
+    alert('Máximo de 11 jogadores em campo!');
+    return;
+  }
+
+  player.emCampo = true;
+  saveData();
+  renderField();
+}
+
+function dropNaReserva(ev) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.currentTarget.classList.remove('drag-over');
+  const id = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === id);
+  if (player) {
+    player.emCampo = false;
+    saveData();
+    renderField();
+  }
+}
+
+function allowDrop(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(ev) {
+  ev.currentTarget.classList.remove('drag-over');
+}
+
+function substituirJogador(id) {
+  const player = players.find(p => p.id === id);
+  if (!player) return;
+  player.emCampo = false;
+  saveData();
+  renderField();
+  renderPlayerList();
+}
+
 // ── PLAYERS ────────────────────────────────────────────────────────────────
 function addPlayer() {
   const input = document.getElementById('new-player-input');
@@ -265,11 +316,12 @@ function attachFieldDrag(el) {
   });
 
   el.addEventListener('mousedown', e => {
+    // Só inicia arraste manual se não for drag nativo
+    if (e.button!== 0) return;
     fDragEl = el; fDragEl.classList.add('is-dragging');
     const r = document.getElementById('pitch-container').getBoundingClientRect();
     fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
     fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
-    e.preventDefault();
   });
 }
 
@@ -344,22 +396,41 @@ function renderField() {
     if (sp) savedPos = JSON.parse(sp);
   } catch(e) {}
 
-  const n = Math.min(defaultPos.length, players.length);
-  players.slice(0, n).forEach((p, i) => {
+  const emCampo = players.filter(p => p.emCampo);
+  const n = Math.min(defaultPos.length, emCampo.length);
+
+  emCampo.slice(0, n).forEach((p, i) => {
     const el = document.createElement('div');
     el.className = 'field-player' + (i === 0? ' gk' : '');
-    el.dataset.index = i;
+    el.dataset.id = p.id;
+    el.draggable = true;
+    el.ondragstart = (e) => {
+      e.dataTransfer.setData('text/plain', p.id);
+      e.dataTransfer.effectAllowed = 'move';
+      el.classList.add('is-dragging');
+    };
+    el.ondragend = (e) => {
+      el.classList.remove('is-dragging');
+    };
     const pos = (savedPos && savedPos[i])? savedPos[i] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
     el.style.left = pos.x + '%';
     el.style.top = pos.y + '%';
-    el.innerHTML = `<div class="field-dot">${i+1}</div><div class="field-name">${esc(shortName(p.name))}</div>`;
+    el.innerHTML = `<div class="field-dot"
+                      ondblclick="substituirJogador(${p.id})">${i+1}</div>
+                    <div class="field-name">${esc(shortName(p.name))}</div>`;
     attachFieldDrag(el);
     fp.appendChild(el);
   });
 
   const bench = document.getElementById('bench-list');
-  const bp = players.slice(n);
-  bench.innerHTML = bp.length? bp.map((p,i) => `<div class="bench-chip"><span>${n+i+1}</span>${esc(shortName(p.name))}</div>`).join('') : '<span class="bench-empty">Todos em campo</span>';
+  const reservas = players.filter(p =>!p.emCampo);
+  bench.innerHTML = reservas.length? reservas.map(p => `
+    <div class="bench-chip" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', ${p.id})">
+      ${esc(shortName(p.name))}
+    </div>
+  `).join('') : '<span class="bench-empty">Todos em campo</span>';
+
   if (!players.length) {
     fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
     bench.innerHTML = '<span class="bench-empty">—</span>';
@@ -383,7 +454,9 @@ function resetPositions() {
 function updateFieldNames() {
   document.querySelectorAll('.field-player').forEach((el, i) => {
     const n = el.querySelector('.field-name');
-    if (n && players[i]) n.textContent = shortName(players[i].name);
+    const id = parseInt(el.dataset.id);
+    const player = players.find(p => p.id === id);
+    if (n && player) n.textContent = shortName(player.name);
   });
 }
 
