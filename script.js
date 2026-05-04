@@ -127,23 +127,9 @@ function switchTab(tab, btn) {
 function toggleStatus(id) {
   const player = players.find(p => p.id === id);
   if (!player) return;
-
   const estados = ['indefinido', 'veio', 'faltou'];
   let atual = player.status || 'indefinido';
-  let proximo = estados[(estados.indexOf(atual) + 1) % 3];
-
-  player.status = proximo;
-
-  // Se virou 'faltou' = vermelho, manda pro final da lista
-  if (proximo === 'faltou') {
-    const index = players.findIndex(p => p.id === id);
-    if (index > -1) {
-      const [jogador] = players.splice(index, 1);
-      players.push(jogador);
-    }
-  }
-  // Se virou 'veio' = verde, não mexe na posição
-
+  player.status = estados[(estados.indexOf(atual) + 1) % 3];
   saveData();
   renderPlayerList();
 }
@@ -152,33 +138,18 @@ function toggleStatus(id) {
 function dropNoCampo(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
-
   const id = parseInt(ev.dataTransfer.getData("text/plain"));
   const player = players.find(p => p.id === id);
 
-  if (!player || player.emCampo || player.status === 'faltou') return;
+  if (!player || player.emCampo) return;
 
-  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou').length;
+  const emCampo = players.filter(p => p.emCampo).length;
   if (emCampo >= 11) {
     alert('Máximo de 11 jogadores em campo!');
     return;
   }
 
-  // Pega posição do mouse ou do touch
-  const clientX = ev.clientX || (ev.changedTouches && ev.changedTouches[0].clientX);
-  const clientY = ev.clientY || (ev.changedTouches && ev.changedTouches[0].clientY);
-
-  if (!clientX ||!clientY) return;
-
-  const rect = ev.currentTarget.getBoundingClientRect();
-  let x = ((clientX - rect.left) / rect.width) * 100;
-  let y = ((clientY - rect.top) / rect.height) * 100;
-
-  // Limita entre 5% e 95% pra não cortar a bolinha na borda
-  player.x = Math.max(5, Math.min(95, x));
-  player.y = Math.max(5, Math.min(95, y));
   player.emCampo = true;
-
   saveData();
   renderField();
 }
@@ -257,10 +228,9 @@ function renderPlayerList() {
     return;
   }
   list.innerHTML = players.map((p, i) => `
-    <div class="player-item" data-index="${i}" data-status="${p.status || 'indefinido'}">
-      <span class="drag-handle" draggable="true" 
-            ondragstart="dragStart(event,${i})" 
-            ondragend="dragEnd()">⋮⋮</span>
+    <div class="player-item" draggable="true" data-index="${i}" data-status="${p.status || 'indefinido'}"
+         ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})"
+         ondragend="dragEnd()" ondrop="drop(event,${i})">
       <span class="status-btn ${p.status || 'indefinido'}" onclick="toggleStatus(${p.id})"></span>
       <span class="player-num">${i+1}</span>
       <input class="player-name-input" type="text" value="${esc(p.name)}"
@@ -284,11 +254,9 @@ function drop(e, ti) {
 // ── TOUCH LIST DRAG ────────────────────────────────────────────────────────
 let tSrc = null, tClone = null, tTarget = null;
 document.addEventListener('touchstart', e => {
-  const handle = e.target.closest('.drag-handle');
-  if (!handle) return; // Só inicia drag se tocar na alça
-  const item = handle.closest('.player-item');
-  tSrc = parseInt(item.dataset.index); 
-  item.classList.add('dragging');
+  const item = e.target.closest('.player-item');
+  if (!item ||!e.target.classList.contains('drag-handle')) return;
+  tSrc = parseInt(item.dataset.index); item.classList.add('dragging');
   tClone = item.cloneNode(true);
   tClone.style.cssText = `position:fixed;opacity:.85;pointer-events:none;z-index:999;width:${item.offsetWidth}px;border-color:#f0c040;left:${e.touches[0].clientX - item.offsetWidth/2}px;top:${e.touches[0].clientY-22}px;background:#192219;border-radius:8px;`;
   document.body.appendChild(tClone);
@@ -458,13 +426,12 @@ function renderField() {
   const bench = document.getElementById('bench-list');
   // MUDANÇA: filtra 'faltou' do banco também
   const reservas = players.filter(p =>!p.emCampo && p.status!== 'faltou');
-
-bench.innerHTML = reservas.length? reservas.map(p => `
-  <div class="bench-chip" draggable="true" data-id="${p.id}"
-       ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move';">
-    ${esc(shortName(p.name))}
-  </div>
-`).join('') : '<span class="bench-empty">Todos em campo</span>';
+  bench.innerHTML = reservas.length? reservas.map(p => `
+    <div class="bench-chip" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', ${p.id})">
+      ${esc(shortName(p.name))}
+    </div>
+  `).join('') : '<span class="bench-empty">Todos em campo</span>';
 
   if (!players.length) {
     fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
@@ -517,15 +484,8 @@ function updateFieldNames() {
 
 function shortName(name) {
   if (!name) return '?';
-  const n = name.trim();
-  if (n.length <= 16) return n; // mostra até 16 letras completo
-
-  const parts = n.split(' ');
-  if (parts.length > 1) {
-    // Nome + inicial do último sobrenome: "João Silva" vira "João S."
-    return parts[0] + ' ' + parts[parts.length-1][0] + '.';
-  }
-  return n.substring(0, 16);
+  const p = name.trim().split(' ');
+  return p.length === 1? p[0] : p[p.length - 1];
 }
 
 // ── SAVE / LOAD ────────────────────────────────────────────────────────────
