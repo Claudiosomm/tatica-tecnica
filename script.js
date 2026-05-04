@@ -257,9 +257,10 @@ function renderPlayerList() {
     return;
   }
   list.innerHTML = players.map((p, i) => `
-    <div class="player-item" draggable="true" data-index="${i}" data-status="${p.status || 'indefinido'}"
-         ondragstart="dragStart(event,${i})" ondragover="dragOver(event,${i})"
-         ondragend="dragEnd()" ondrop="drop(event,${i})">
+    <div class="player-item" data-index="${i}" data-status="${p.status || 'indefinido'}">
+      <span class="drag-handle" draggable="true" 
+            ondragstart="dragStart(event,${i})" 
+            ondragend="dragEnd()">⋮⋮</span>
       <span class="status-btn ${p.status || 'indefinido'}" onclick="toggleStatus(${p.id})"></span>
       <span class="player-num">${i+1}</span>
       <input class="player-name-input" type="text" value="${esc(p.name)}"
@@ -283,9 +284,11 @@ function drop(e, ti) {
 // ── TOUCH LIST DRAG ────────────────────────────────────────────────────────
 let tSrc = null, tClone = null, tTarget = null;
 document.addEventListener('touchstart', e => {
-  const item = e.target.closest('.player-item');
-  if (!item ||!e.target.classList.contains('drag-handle')) return;
-  tSrc = parseInt(item.dataset.index); item.classList.add('dragging');
+  const handle = e.target.closest('.drag-handle');
+  if (!handle) return; // Só inicia drag se tocar na alça
+  const item = handle.closest('.player-item');
+  tSrc = parseInt(item.dataset.index); 
+  item.classList.add('dragging');
   tClone = item.cloneNode(true);
   tClone.style.cssText = `position:fixed;opacity:.85;pointer-events:none;z-index:999;width:${item.offsetWidth}px;border-color:#f0c040;left:${e.touches[0].clientX - item.offsetWidth/2}px;top:${e.touches[0].clientY-22}px;background:#192219;border-radius:8px;`;
   document.body.appendChild(tClone);
