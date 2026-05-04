@@ -5,7 +5,7 @@ let senhaAcesso = localStorage.getItem('tatica_senha') || '0905';
 // ── STATE ──────────────────────────────────────────────────────────────────
 let players = [], nextId = 1, dragSrcIndex = null;
 let fSelected = null, fDragEl = null, fOffX = 0, fOffY = 0, fTouchMoved = false;
-let isNativeDrag = false;
+let longPressTimer = null;
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────
 let loginEntry = '';
@@ -243,41 +243,75 @@ function dropNaReserva(ev) {
   }
 }
 
+// ── SUBSTITUIR JOGADOR ─────────────────────────────────────────────────────
+function substituirJogador(id) {
+  const player = players.find(p => p.id === id);
+  if (!player) return;
+  player.emCampo = false;
+  saveData();
+  renderField();
+}
+
 // ── FIELD DRAG ─────────────────────────────────────────────────────────────
 function clampPos(v) { return Math.max(2, Math.min(98, v)); }
 
-function selectPlayer(el) {
-  document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
-  if (fSelected === el) { fSelected = null; return; }
-  fSelected = el;
-  el.classList.add('selected');
-}
-
 function attachFieldDrag(el) {
-  el.addEventListener('dragstart', (e) => {
-    // Só ativa drag nativo se clicou na bolinha
-    if (!e.target.closest('.field-dot')) {
-      e.preventDefault();
-      return;
-    }
-    isNativeDrag = true;
-    e.dataTransfer.setData("id", el.dataset.id);
-    e.dataTransfer.effectAllowed = "move";
-  });
+  const id = parseInt(el.dataset.id);
 
-  el.addEventListener('dragend', () => {
-    isNativeDrag = false;
-  });
-
-  // Drag customizado pra reposicionar
+  // Clique longo = substituir
   el.addEventListener('mousedown', e => {
-    if (e.button!== 0 || isNativeDrag) return;
+    if (e.button!== 0) return;
+    longPressTimer = setTimeout(() => {
+      substituirJogador(id);
+      longPressTimer = null;
+    }, 600);
+  });
+
+  el.addEventListener('mouseup', () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  });
+
+  el.addEventListener('mouseleave', () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  });
+
+  el.addEventListener('touchstart', e => {
+    longPressTimer = setTimeout(() => {
+      substituirJogador(id);
+      longPressTimer = null;
+    }, 600);
+  });
+
+  el.addEventListener('touchend', () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  });
+
+  el.addEventListener('touchcancel', () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
+  });
+
+  // DRAG PRA REPOSICIONAR - funciona em tudo
+  el.addEventListener('mousedown', e => {
+    if (e.button!== 0 || e.target.closest('.field-dot')) return;
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
     const r = document.getElementById('pitch-container').getBoundingClientRect();
     fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
     fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
     e.preventDefault();
+    e.stopPropagation();
   });
 
   el.addEventListener('touchstart', e => {
@@ -296,14 +330,24 @@ function attachFieldDrag(el) {
     if (!fDragEl) return;
     e.stopPropagation();
     fDragEl.classList.remove('is-dragging');
-    if (!fTouchMoved) selectPlayer(el);
-    else { fSelected = null; document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected')); savePositions(); }
+    if (fTouchMoved) {
+      savePositions();
+    }
     fDragEl = null;
+  });
+
+  // DRAG NATIVO PRA RESERVA - só na bolinha
+  const dot = el.querySelector('.field-dot');
+  dot.draggable = true;
+  dot.addEventListener('dragstart', (e) => {
+    e.stopPropagation();
+    e.dataTransfer.setData("id", id);
+    e.dataTransfer.effectAllowed = "move";
   });
 }
 
 document.addEventListener('touchmove', e => {
-  if (!fDragEl || isNativeDrag) return;
+  if (!fDragEl) return;
   fTouchMoved = true;
   e.preventDefault();
   const r = document.getElementById('pitch-container').getBoundingClientRect();
@@ -313,7 +357,7 @@ document.addEventListener('touchmove', e => {
 }, { passive: false });
 
 document.addEventListener('mousemove', e => {
-  if (!fDragEl || isNativeDrag) return;
+  if (!fDragEl) return;
   const r = document.getElementById('pitch-container').getBoundingClientRect();
   fDragEl.style.left = clampPos((e.clientX - r.left - fOffX) / r.width * 100) + '%';
   fDragEl.style.top = clampPos((e.clientY - r.top - fOffY) / r.height * 100) + '%';
@@ -322,22 +366,13 @@ document.addEventListener('mousemove', e => {
 document.addEventListener('mouseup', e => {
   if (fDragEl) {
     fDragEl.classList.remove('is-dragging');
-    if (!isNativeDrag) savePositions();
+    savePositions();
     fDragEl = null;
   }
-  isNativeDrag = false;
-});
-
-document.getElementById('pitch-container').addEventListener('touchend', e => {
-  if (!fSelected || fDragEl) return;
-  const r = document.getElementById('pitch-container').getBoundingClientRect();
-  const t = e.changedTouches[0];
-  if (t.clientX < r.left || t.clientX > r.right || t.clientY < r.top || t.clientY > r.bottom) return;
-  fSelected.style.left = clampPos((t.clientX - r.left) / r.width * 100) + '%';
-  fSelected.style.top = clampPos((t.clientY - r.top) / r.height * 100) + '%';
-  fSelected.classList.remove('selected');
-  fSelected = null;
-  savePositions();
+  if (longPressTimer) {
+    clearTimeout(longPressTimer);
+    longPressTimer = null;
+  }
 });
 
 // ── FORMATIONS ─────────────────────────────────────────────────────────────
@@ -387,7 +422,6 @@ function renderField() {
     const el = document.createElement('div');
     el.className = 'field-player' + (i === 0? ' gk' : '');
     el.dataset.id = p.id;
-    el.draggable = true;
     const pos = (savedPos && savedPos[i])? savedPos[i] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
     el.style.left = pos.x + '%';
     el.style.top = pos.y + '%';
