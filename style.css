@@ -214,4 +214,33 @@
   .pin-msg.error { color: var(--accent2); }
   .pin-msg.success { color: #4caf50; }
 
-  /* ── BOLINHA PRESENÇA ────────────────────────────────────────────────── */
+  .player-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  background: #192219;
+  border-radius: 8px;
+  margin-bottom: 6px;
+  touch-action: pan-y; /* Libera scroll vertical */
+}
+
+.drag-handle {
+  cursor: grab;
+  color: rgba(255,255,255,.3);
+  font-size: 18px;
+  padding: 0 4px;
+  touch-action: none; /* Só a alça bloqueia scroll */
+  user-select: none;
+}
+.drag-handle:active {
+  cursor: grabbing;
+  color: #f0c040;
+}
+
+.player-item.drag-over {
+  border: 2px dashed #f0c040;
+}
+.player-item.dragging {
+  opacity: .4;
+}
