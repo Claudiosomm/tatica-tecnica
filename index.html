@@ -6,7 +6,6 @@
 <title>⚽ Tática</title>
 <script defer src="script.js"></script>
 <link rel="stylesheet" href="style.css">
-
 </head>
 <body>
 
@@ -25,7 +24,7 @@
 <div id="view-jogadores" class="view active">
   <div class="player-list-wrap">
     <div class="add-player-row">
-      <input id="new-player-input" type="text" placeholder="Nome do jogador..." maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
+      <input id="new-player-input" type="text" placeholder="Nome do jogador..." maxlength="30" autocomplete="off" autocorrect="off" spellcheck="false">
       <button class="btn-add" onclick="addPlayer()">+</button>
     </div>
     <div class="players-label">ELENCO</div>
@@ -54,7 +53,8 @@
       </select>
       <button class="btn-reset" onclick="resetPositions()" title="Resetar posições">↺</button>
     </div>
-    <div class="pitch-container" id="pitch-container">
+    
+    <div class="pitch-container" id="pitch-container" ondrop="dropNoCampo(event)" ondragover="allowDrop(event)" ondragleave="dragLeave(event)">
       <svg class="pitch-svg" viewBox="0 0 340 520" xmlns="http://www.w3.org/2000/svg">
         <rect width="340" height="520" fill="#2a7032"/>
         <rect x="0" y="0" width="340" height="52" fill="#286e30"/>
@@ -83,13 +83,21 @@
       </svg>
       <div id="field-players"></div>
     </div>
+    
     <div class="legend-row">
       <div class="legend-item"><div class="legend-dot pl"></div> Jogadores</div>
       <div class="legend-item"><div class="legend-dot gk"></div> Goleiro</div>
     </div>
-    <div class="bench-section">
+    
+    <!-- BANCO CORRIGIDO: agora aceita drop -->
+    <div class="bench-section" 
+         ondrop="dropNaReserva(event)" 
+         ondragover="allowDrop(event)" 
+         ondragleave="dragLeave(event)">
       <div class="bench-title">BANCO DE RESERVAS</div>
-      <div class="bench-list" id="bench-list"><span class="bench-empty">—</span></div>
+      <div class="bench-list" id="bench-list">
+        <span class="bench-empty">—</span>
+      </div>
     </div>
   </div>
 </div>
