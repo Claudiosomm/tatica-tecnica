@@ -54,8 +54,11 @@
       </select>
       <button class="btn-reset" onclick="resetPositions()" title="Resetar posições">↺</button>
     </div>
-    <div class="pitch-container" id="pitch-container">
-      <svg class="pitch-svg" viewBox="0 0 340 520" xmlns="http://www.w3.org/2000/svg">
+    <div class="pitch-container" id="pitch-container"
+         ondragover="allowDrop(event)"
+         ondragleave="dragLeave(event)"
+         ondrop="dropNoCampo(event)">
+        <svg class="pitch-svg" viewBox="0 0 340 520" xmlns="http://www.w3.org/2000/svg">
         <rect width="340" height="520" fill="#2a7032"/>
         <rect x="0" y="0" width="340" height="52" fill="#286e30"/>
         <rect x="0" y="104" width="340" height="52" fill="#286e30"/>
@@ -89,7 +92,11 @@
     </div>
     <div class="bench-section">
       <div class="bench-title">BANCO DE RESERVAS</div>
-      <div class="bench-list" id="bench-list"><span class="bench-empty">—</span></div>
+      <div id="bench-list"
+     ondragover="allowDrop(event)"
+     ondragleave="dragLeave(event)"
+     ondrop="dropNaReserva(event)">
+</div>
     </div>
   </div>
 </div>
