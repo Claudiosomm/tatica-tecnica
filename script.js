@@ -175,9 +175,15 @@ function dropNoCampo(ev) {
   let y = ((clientY - rect.top) / rect.height) * 100;
 
   // Limita entre 5% e 95% pra não cortar a bolinha na borda
-  player.x = Math.max(5, Math.min(95, x));
-  player.y = Math.max(5, Math.min(95, y));
+  player.fieldX = Math.max(5, Math.min(95, x));
+  player.fieldY = Math.max(5, Math.min(95, y));
   player.emCampo = true;
+
+  // Salva posição por ID no localStorage imediatamente
+  let savedPos = {};
+  try { const sp = localStorage.getItem('tatica_positions'); if (sp) savedPos = JSON.parse(sp); } catch(e) {}
+  savedPos[player.id] = { x: player.fieldX, y: player.fieldY };
+  try { localStorage.setItem('tatica_positions', JSON.stringify(savedPos)); } catch(e) {}
 
   saveData();
   renderField();
@@ -461,13 +467,15 @@ function renderField() {
     if (sp) savedPos = JSON.parse(sp);
   } catch(e) {}
 
-  // MUDANÇA: filtra 'faltou' do campo também
-  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou');
-  const n = Math.min(defaultPos.length, emCampo.length);
+  const emCampo = players.filter(p => p.emCampo && p.status !== 'faltou');
 
-  emCampo.slice(0, n).forEach((p, i) => {
+  emCampo.forEach((p) => {
+    // Número e classe GK baseados na posição fixa do jogador no array players
+    const globalIdx = players.findIndex(pl => pl.id === p.id);
+    const isGk = p.isGk || false;
+
     const el = document.createElement('div');
-    el.className = 'field-player' + (i === 0? ' gk' : '');
+    el.className = 'field-player' + (isGk ? ' gk' : '');
     el.dataset.id = p.id;
     el.draggable = true;
     el.ondragstart = (e) => {
@@ -475,29 +483,38 @@ function renderField() {
       e.dataTransfer.effectAllowed = 'move';
       el.classList.add('is-dragging');
     };
-    el.ondragend = (e) => {
-      el.classList.remove('is-dragging');
-    };
-    const pos = (savedPos && savedPos[p.id])? savedPos[p.id] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
+    el.ondragend = () => { el.classList.remove('is-dragging'); };
+
+    // Posição: usa a salva por ID, ou a posição padrão que foi atribuída quando entrou em campo
+    let pos;
+    if (savedPos && savedPos[p.id]) {
+      pos = savedPos[p.id];
+    } else if (p.fieldX !== undefined && p.fieldY !== undefined) {
+      pos = { x: p.fieldX, y: p.fieldY };
+    } else {
+      // Fallback: próxima posição padrão disponível
+      const usedSlots = emCampo.filter(pl => pl.id !== p.id && (savedPos && savedPos[pl.id] || pl.fieldX !== undefined)).length;
+      const slot = Math.min(usedSlots, defaultPos.length - 1);
+      pos = { x: defaultPos[slot].x * 100, y: defaultPos[slot].y * 100 };
+    }
+
     el.style.left = pos.x + '%';
     el.style.top = pos.y + '%';
-    el.innerHTML = `<div class="field-dot"
-                      ondblclick="substituirJogador(${p.id})">${i+1}</div>
+    el.innerHTML = `<div class="field-dot" ondblclick="substituirJogador(${p.id})">${globalIdx + 1}</div>
                     <div class="field-name">${esc(shortName(p.name))}</div>`;
     attachFieldDrag(el);
     fp.appendChild(el);
   });
 
   const bench = document.getElementById('bench-list');
-  // MUDANÇA: filtra 'faltou' do banco também
-  const reservas = players.filter(p =>!p.emCampo && p.status!== 'faltou');
+  const reservas = players.filter(p => !p.emCampo && p.status !== 'faltou');
 
-bench.innerHTML = reservas.length? reservas.map(p => `
-  <div class="bench-chip" draggable="true" data-id="${p.id}"
-       ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move';">
-    ${esc(shortName(p.name))}
-  </div>
-`).join('') : '<span class="bench-empty">Todos em campo</span>';
+  bench.innerHTML = reservas.length ? reservas.map(p => `
+    <div class="bench-chip" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move';">
+      ${esc(shortName(p.name))}
+    </div>
+  `).join('') : '<span class="bench-empty">Todos em campo</span>';
 
   if (!players.length) {
     fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
