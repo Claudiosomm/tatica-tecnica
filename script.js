@@ -256,29 +256,59 @@ function renderPlayerList() {
     list.innerHTML = '<div class="empty-msg">Nenhum jogador. Adicione acima ☝️</div>';
     return;
   }
-  list.innerHTML = players.map((p, i) => `
-    <div class="player-item" data-index="${i}" data-status="${p.status || 'indefinido'}">
-      <span class="drag-handle" draggable="true" 
-            ondragstart="dragStart(event,${i})" 
-            ondragend="dragEnd()">⋮⋮</span>
+
+  list.innerHTML = '';
+  players.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'player-item';
+    div.dataset.index = i;
+    div.dataset.status = p.status || 'indefinido';
+    div.innerHTML = `
+      <span class="drag-handle" title="Arrastar">⠿</span>
       <span class="status-btn ${p.status || 'indefinido'}" onclick="toggleStatus(${p.id})"></span>
       <span class="player-num">${i+1}</span>
       <input class="player-name-input" type="text" value="${esc(p.name)}"
         placeholder="Nome..." oninput="updatePlayerName(${p.id},this.value)"
         autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
-    </div>`).join('');
-}
+      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>`;
 
-// ── DRAG LIST ──────────────────────────────────────────────────────────────
-function dragStart(e, i) { dragSrcIndex = i; e.currentTarget.classList.add('dragging'); e.dataTransfer.effectAllowed = 'move'; }
-function dragOver(e, i) { e.preventDefault(); document.querySelectorAll('.player-item').forEach(el => el.classList.remove('drag-over')); if (i!== dragSrcIndex) e.currentTarget.classList.add('drag-over'); }
-function dragEnd() { document.querySelectorAll('.player-item').forEach(el => el.classList.remove('dragging','drag-over')); }
-function drop(e, ti) {
-  e.preventDefault();
-  if (dragSrcIndex === null || dragSrcIndex === ti) return;
-  players.splice(ti, 0, players.splice(dragSrcIndex, 1)[0]);
-  dragSrcIndex = null; renderPlayerList(); saveData();
+    const handle = div.querySelector('.drag-handle');
+    handle.setAttribute('draggable', 'true');
+
+    handle.addEventListener('dragstart', e => {
+      dragSrcIndex = i;
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(i));
+      setTimeout(() => div.classList.add('dragging'), 0);
+    });
+    handle.addEventListener('dragend', () => {
+      div.classList.remove('dragging');
+      list.querySelectorAll('.player-item').forEach(el => el.classList.remove('drag-over'));
+      dragSrcIndex = null;
+    });
+    div.addEventListener('dragover', e => {
+      e.preventDefault();
+      if (dragSrcIndex === null || dragSrcIndex === i) return;
+      list.querySelectorAll('.player-item').forEach(el => el.classList.remove('drag-over'));
+      div.classList.add('drag-over');
+    });
+    div.addEventListener('dragleave', e => {
+      if (!div.contains(e.relatedTarget)) div.classList.remove('drag-over');
+    });
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      div.classList.remove('drag-over');
+      if (dragSrcIndex === null || dragSrcIndex === i) return;
+      const tmp = players[dragSrcIndex];
+      players[dragSrcIndex] = players[i];
+      players[i] = tmp;
+      dragSrcIndex = null;
+      renderPlayerList();
+      saveData();
+    });
+
+    list.appendChild(div);
+  });
 }
 
 // ── TOUCH LIST DRAG ────────────────────────────────────────────────────────
@@ -307,7 +337,10 @@ document.addEventListener('touchend', e => {
   document.querySelectorAll('.player-item').forEach(i => i.classList.remove('dragging','drag-over'));
   if (tClone) { tClone.remove(); tClone = null; }
   if (tTarget!== null && tTarget!== tSrc) {
-    players.splice(tTarget, 0, players.splice(tSrc, 1)[0]);
+    // Troca os dois de lugar (swap), sem mover os outros
+    const tmp = players[tSrc];
+    players[tSrc] = players[tTarget];
+    players[tTarget] = tmp;
     renderPlayerList(); saveData();
   }
   tSrc = null; tTarget = null;
@@ -445,7 +478,7 @@ function renderField() {
     el.ondragend = (e) => {
       el.classList.remove('is-dragging');
     };
-    const pos = (savedPos && savedPos[i])? savedPos[i] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
+    const pos = (savedPos && savedPos[p.id])? savedPos[p.id] : { x: defaultPos[i].x * 100, y: defaultPos[i].y * 100 };
     el.style.left = pos.x + '%';
     el.style.top = pos.y + '%';
     el.innerHTML = `<div class="field-dot"
@@ -494,9 +527,10 @@ function dropNoCampo(ev) {
 
 function savePositions() {
   const els = document.querySelectorAll('.field-player');
-  const pos = [];
+  const pos = {};
   els.forEach(el => {
-    pos.push({ x: parseFloat(el.style.left), y: parseFloat(el.style.top) });
+    const id = el.dataset.id;
+    pos[id] = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) };
   });
   try { localStorage.setItem('tatica_positions', JSON.stringify(pos)); } catch(e) {}
 }
