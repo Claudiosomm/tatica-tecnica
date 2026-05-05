@@ -382,8 +382,26 @@ function attachFieldDrag(el) {
   el.addEventListener('touchend', e => {
     e.stopPropagation();
     if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; }
-    if (!fTouchMoved) selectPlayer(el);
-    else { fSelected = null; document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected')); savePositions(); }
+    if (!fTouchMoved) {
+      selectPlayer(el);
+    } else {
+      fSelected = null;
+      document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
+      const t = e.changedTouches[0];
+      const bench = document.getElementById('bench-list');
+      const br = bench.getBoundingClientRect();
+      if (t.clientX >= br.left && t.clientX <= br.right && t.clientY >= br.top && t.clientY <= br.bottom) {
+        const id = parseInt(el.dataset.id);
+        const player = players.find(p => p.id === id);
+        if (player) {
+          player.emCampo = false;
+          saveData();
+          renderField();
+          return;
+        }
+      }
+      savePositions();
+    }
   });
 
   el.addEventListener('mousedown', e => {
