@@ -3,7 +3,11 @@ const SENHA_MESTRE = '130162';
 let senhaAcesso = localStorage.getItem('tatica_senha') || '0905';
 
 // ── STATE ──────────────────────────────────────────────────────────────────
-let players = [], nextId = 1, dragSrcIndex = null;
+let players = [], nextId = 1;
+let selectedPlayerId = null;
+let fDragEl = null;
+let fOffX = 0, fOffY = 0;
+let startX = 0, startY = 0;
 
 // ── LOGIN ──────────────────────────────────────────────────────────────────
 let loginEntry = '';
@@ -114,338 +118,6 @@ function errorShake(dotsId) {
   setTimeout(() => document.querySelectorAll('#' + dotsId + '.pin-dot').forEach(d => d.classList.remove('error')), 700);
 }
 
-// ── TABS ───────────────────────────────────────────────────────────────────
-function switchTab(tab, btn) {
-  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('view-' + tab).classList.add('active');
-  if (btn) btn.classList.add('active');
-  if (tab === 'campo') renderField();
-}
-
-// ── STATUS VEIO/FALTOU ─────────────────────────────────────────────────────
-function toggleStatus(id) {
-  const player = players.find(p => p.id === id);
-  if (!player) return;
-
-  const estados = ['indefinido', 'veio', 'faltou'];
-  let atual = player.status || 'indefinido';
-  let proximo = estados[(estados.indexOf(atual) + 1) % 3];
-
-  player.status = proximo;
-
-  // Se virou 'faltou' = vermelho, manda pro final da lista
-  if (proximo === 'faltou') {
-    const index = players.findIndex(p => p.id === id);
-    if (index > -1) {
-      const [jogador] = players.splice(index, 1);
-      players.push(jogador);
-    }
-  }
-  // Se virou 'veio' = verde, não mexe na posição
-
-  saveData();
-  renderPlayerList();
-}
-
-// ── TROCA BANCO ↔ CAMPO ────────────────────────────────────────────────────
-function dropNoCampo(ev) {
-  ev.preventDefault();
-  ev.currentTarget.classList.remove('drag-over');
-
-  const id = parseInt(ev.dataTransfer.getData("text/plain"));
-  const player = players.find(p => p.id === id);
-
-  if (!player || player.emCampo || player.status === 'faltou') return;
-
-  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou').length;
-  if (emCampo >= 11) {
-    alert('Máximo de 11 jogadores em campo!');
-    return;
-  }
-
-  // Pega posição do mouse ou do touch
-  const clientX = ev.clientX || (ev.changedTouches && ev.changedTouches[0].clientX);
-  const clientY = ev.clientY || (ev.changedTouches && ev.changedTouches[0].clientY);
-
-  if (!clientX ||!clientY) return;
-
-  const rect = ev.currentTarget.getBoundingClientRect();
-  let x = ((clientX - rect.left) / rect.width) * 100;
-  let y = ((clientY - rect.top) / rect.height) * 100;
-
-  // Limita entre 5% e 95% pra não cortar a bolinha na borda
-  player.fieldX = Math.max(5, Math.min(95, x));
-  player.fieldY = Math.max(5, Math.min(95, y));
-  player.emCampo = true;
-
-  // Salva posição por ID no localStorage imediatamente
-  let savedPos = {};
-  try { const sp = localStorage.getItem('tatica_positions'); if (sp) savedPos = JSON.parse(sp); } catch(e) {}
-  savedPos[player.id] = { x: player.fieldX, y: player.fieldY };
-  try { localStorage.setItem('tatica_positions', JSON.stringify(savedPos)); } catch(e) {}
-
-  saveData();
-  renderField();
-}
-
-function dropNaReserva(ev) {
-  ev.preventDefault();
-  ev.stopPropagation();
-  ev.currentTarget.classList.remove('drag-over');
-  const id = parseInt(ev.dataTransfer.getData("text/plain"));
-  const player = players.find(p => p.id === id);
-  if (player) {
-    player.emCampo = false;
-    saveData();
-    renderField();
-  }
-}
-
-function allowDrop(ev) {
-  ev.preventDefault();
-  ev.currentTarget.classList.add('drag-over');
-}
-
-function dragLeave(ev) {
-  ev.currentTarget.classList.remove('drag-over');
-}
-
-function substituirJogador(id) {
-  const player = players.find(p => p.id === id);
-  if (!player) return;
-  player.emCampo = false;
-  saveData();
-  renderField();
-  renderPlayerList();
-}
-
-// ── PLAYERS ────────────────────────────────────────────────────────────────
-function addPlayer() {
-  const input = document.getElementById('new-player-input');
-  const name = input.value.trim();
-  if (!name) return;
-  players.push({
-    id: nextId++,
-    name: name,
-    status: 'indefinido',
-    emCampo: false,
-    x: 50,
-    y: 50
-  });
-  input.value = '';
-  renderPlayerList();
-  saveData();
-  input.focus();
-}
-document.getElementById('new-player-input').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
-
-function removePlayer(id) {
-  players = players.filter(p => p.id!== id);
-  renderPlayerList();
-  renderField();
-  saveData();
-}
-
-function updatePlayerName(id, name) {
-  const p = players.find(p => p.id === id);
-  if (p) p.name = name;
-  updateFieldNames();
-  saveData();
-}
-
-function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
-
-function renderPlayerList() {
-  const list = document.getElementById('player-list');
-  if (!players.length) {
-    list.innerHTML = '<div class="empty-msg">Nenhum jogador. Adicione acima ☝️</div>';
-    return;
-  }
-
-  list.innerHTML = '';
-  players.forEach((p, i) => {
-    const div = document.createElement('div');
-    div.className = 'player-item';
-    div.dataset.index = i;
-    div.dataset.status = p.status || 'indefinido';
-    div.innerHTML = `
-      <span class="drag-handle" title="Arrastar">⠿</span>
-      <span class="status-btn ${p.status || 'indefinido'}" onclick="toggleStatus(${p.id})"></span>
-      <span class="player-num">${i+1}</span>
-      <input class="player-name-input" type="text" value="${esc(p.name)}"
-        placeholder="Nome..." oninput="updatePlayerName(${p.id},this.value)"
-        autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>`;
-
-    const handle = div.querySelector('.drag-handle');
-    handle.setAttribute('draggable', 'true');
-
-    handle.addEventListener('dragstart', e => {
-      dragSrcIndex = i;
-      e.dataTransfer.effectAllowed = 'move';
-      e.dataTransfer.setData('text/plain', String(i));
-      setTimeout(() => div.classList.add('dragging'), 0);
-    });
-    handle.addEventListener('dragend', () => {
-      div.classList.remove('dragging');
-      list.querySelectorAll('.player-item').forEach(el => el.classList.remove('drag-over'));
-      dragSrcIndex = null;
-    });
-    div.addEventListener('dragover', e => {
-      e.preventDefault();
-      if (dragSrcIndex === null || dragSrcIndex === i) return;
-      list.querySelectorAll('.player-item').forEach(el => el.classList.remove('drag-over'));
-      div.classList.add('drag-over');
-    });
-    div.addEventListener('dragleave', e => {
-      if (!div.contains(e.relatedTarget)) div.classList.remove('drag-over');
-    });
-    div.addEventListener('drop', e => {
-      e.preventDefault();
-      div.classList.remove('drag-over');
-      if (dragSrcIndex === null || dragSrcIndex === i) return;
-      const tmp = players[dragSrcIndex];
-      players[dragSrcIndex] = players[i];
-      players[i] = tmp;
-      dragSrcIndex = null;
-      renderPlayerList();
-      saveData();
-    });
-
-    list.appendChild(div);
-  });
-}
-
-// ── TOUCH LIST DRAG ────────────────────────────────────────────────────────
-let tSrc = null, tClone = null, tTarget = null;
-document.addEventListener('touchstart', e => {
-  const handle = e.target.closest('.drag-handle');
-  if (!handle) return; // Só inicia drag se tocar na alça
-  const item = handle.closest('.player-item');
-  tSrc = parseInt(item.dataset.index); 
-  item.classList.add('dragging');
-  tClone = item.cloneNode(true);
-  tClone.style.cssText = `position:fixed;opacity:.85;pointer-events:none;z-index:999;width:${item.offsetWidth}px;border-color:#f0c040;left:${e.touches[0].clientX - item.offsetWidth/2}px;top:${e.touches[0].clientY-22}px;background:#192219;border-radius:8px;`;
-  document.body.appendChild(tClone);
-}, { passive: true });
-document.addEventListener('touchmove', e => {
-  if (tSrc === null) return;
-  const t = e.touches[0];
-  if (tClone) { tClone.style.left = (t.clientX - tClone.offsetWidth/2)+'px'; tClone.style.top = (t.clientY-22)+'px'; }
-  const el = document.elementFromPoint(t.clientX, t.clientY);
-  const item = el && el.closest('.player-item');
-  document.querySelectorAll('.player-item').forEach(i => i.classList.remove('drag-over'));
-  if (item) { tTarget = parseInt(item.dataset.index); item.classList.add('drag-over'); } else tTarget = null;
-}, { passive: true });
-document.addEventListener('touchend', e => {
-  if (tSrc === null) return;
-  document.querySelectorAll('.player-item').forEach(i => i.classList.remove('dragging','drag-over'));
-  if (tClone) { tClone.remove(); tClone = null; }
-  if (tTarget!== null && tTarget!== tSrc) {
-    // Troca os dois de lugar (swap), sem mover os outros
-    const tmp = players[tSrc];
-    players[tSrc] = players[tTarget];
-    players[tTarget] = tmp;
-    renderPlayerList(); saveData();
-  }
-  tSrc = null; tTarget = null;
-});
-
-// ── FIELD DRAG ─────────────────────────────────────────────────────────────
-let fSelected = null;
-let fDragEl = null;
-let fOffX = 0, fOffY = 0;
-let fTouchMoved = false;
-
-function clampPos(v) { return Math.max(2, Math.min(98, v)); }
-
-function selectPlayer(el) {
-  document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
-  if (fSelected === el) { fSelected = null; return; }
-  fSelected = el;
-  el.classList.add('selected');
-}
-
-function attachFieldDrag(el) {
-  el.addEventListener('touchstart', e => {
-    e.stopPropagation();
-    fTouchMoved = false;
-    fDragEl = el;
-    fDragEl.classList.add('is-dragging');
-    const r = document.getElementById('pitch-container').getBoundingClientRect();
-    const t = e.touches[0];
-    fOffX = t.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
-    fOffY = t.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
-  }, { passive: true });
-
-  el.addEventListener('touchend', e => {
-    e.stopPropagation();
-    if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; }
-    if (!fTouchMoved) {
-      selectPlayer(el);
-    } else {
-      fSelected = null;
-      document.querySelectorAll('.field-player.selected').forEach(e => e.classList.remove('selected'));
-      const t = e.changedTouches[0];
-      const bench = document.getElementById('bench-list');
-      const br = bench.getBoundingClientRect();
-      if (t.clientX >= br.left && t.clientX <= br.right && t.clientY >= br.top && t.clientY <= br.bottom) {
-        const id = parseInt(el.dataset.id);
-        const player = players.find(p => p.id === id);
-        if (player) {
-          player.emCampo = false;
-          saveData();
-          renderField();
-          return;
-        }
-      }
-      savePositions();
-    }
-  });
-
-  el.addEventListener('mousedown', e => {
-    // Só inicia arraste manual se não for drag nativo
-    if (e.button!== 0) return;
-    fDragEl = el; fDragEl.classList.add('is-dragging');
-    const r = document.getElementById('pitch-container').getBoundingClientRect();
-    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
-    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
-  });
-}
-
-document.addEventListener('touchmove', e => {
-  if (!fDragEl) return;
-  fTouchMoved = true;
-  e.preventDefault();
-  const r = document.getElementById('pitch-container').getBoundingClientRect();
-  const t = e.touches[0];
-  fDragEl.style.left = clampPos((t.clientX - r.left - fOffX) / r.width * 100) + '%';
-  fDragEl.style.top = clampPos((t.clientY - r.top - fOffY) / r.height * 100) + '%';
-}, { passive: false });
-
-document.addEventListener('mousemove', e => {
-  if (!fDragEl) return;
-  const r = document.getElementById('pitch-container').getBoundingClientRect();
-  fDragEl.style.left = clampPos((e.clientX - r.left - fOffX) / r.width * 100) + '%';
-  fDragEl.style.top = clampPos((e.clientY - r.top - fOffY) / r.height * 100) + '%';
-});
-document.addEventListener('mouseup', e => {
-  if (fDragEl) { fDragEl.classList.remove('is-dragging'); fDragEl = null; savePositions(); }
-});
-
-document.getElementById('pitch-container').addEventListener('touchend', e => {
-  if (!fSelected || fDragEl) return;
-  const r = document.getElementById('pitch-container').getBoundingClientRect();
-  const t = e.changedTouches[0];
-  if (t.clientX < r.left || t.clientX > r.right || t.clientY < r.top || t.clientY > r.bottom) return;
-  fSelected.style.left = clampPos((t.clientX - r.left) / r.width * 100) + '%';
-  fSelected.style.top = clampPos((t.clientY - r.top) / r.height * 100) + '%';
-  fSelected.classList.remove('selected');
-  fSelected = null;
-  savePositions();
-});
-
 // ── FORMATIONS ─────────────────────────────────────────────────────────────
 const FORMATIONS = {
   "4-4-2": [[1,[50]],[4,[20,38,62,80]],[4,[20,38,62,80]],[2,[35,65]]],
@@ -459,94 +131,158 @@ const FORMATIONS = {
   "4-1-4-1": [[1,[50]],[4,[20,38,62,80]],[1,[50]],[4,[20,38,62,80]],[1,[50]]],
   "4-3-2-1": [[1,[50]],[4,[20,38,62,80]],[3,[28,50,72]],[2,[35,65]],[1,[50]]]
 };
-function getPositions(key) {
-  const lines = FORMATIONS[key]; if (!lines) return [];
-  const n = lines.length, top = 0.04, bot = 0.96, span = bot - top;
-  return lines.flatMap(([,xs], li) => xs.map(x => ({ x: x/100, y: bot - (li/(n-1))*span })));
+
+function getFormationPositions(key) {
+  const lines = FORMATIONS[key];
+  if (!lines) return [];
+  const n = lines.length;
+  const top = 0.08, bot = 0.92, span = bot - top;
+  return lines.flatMap(([,xs], li) => xs.map(x => ({
+    x: x,
+    y: (bot - (li/(n-1))*span) * 100
+  })));
 }
 
-// ── FIELD RENDER ───────────────────────────────────────────────────────────
-function applyFormation() {
-  try { localStorage.removeItem('tatica_positions'); } catch(e) {}
-  renderField();
-  saveData();
-}
-
-function renderField() {
+// ── FIELD MANAGEMENT ───────────────────────────────────────────────────────
+function changeFormation() {
   const key = document.getElementById('formation-select').value;
-  const defaultPos = getPositions(key);
-  const fp = document.getElementById('field-players');
-  fp.innerHTML = '';
-  fSelected = null;
+  const positions = getFormationPositions(key);
+  const emCampo = players.filter(p => p.emCampo);
 
-  let savedPos = null;
-  try {
-    const sp = localStorage.getItem('tatica_positions');
-    if (sp) savedPos = JSON.parse(sp);
-  } catch(e) {}
-
-  const emCampo = players.filter(p => p.emCampo && p.status !== 'faltou');
-
-  emCampo.forEach((p) => {
-    // Número e classe GK baseados na posição fixa do jogador no array players
-    const globalIdx = players.findIndex(pl => pl.id === p.id);
-    const isGk = p.isGk || false;
-
-    const el = document.createElement('div');
-    el.className = 'field-player' + (isGk ? ' gk' : '');
-    el.dataset.id = p.id;
-    el.draggable = true;
-    el.ondragstart = (e) => {
-      e.dataTransfer.setData('text/plain', p.id);
-      e.dataTransfer.effectAllowed = 'move';
-      el.classList.add('is-dragging');
-    };
-    el.ondragend = () => { el.classList.remove('is-dragging'); };
-
-    // Posição: usa a salva por ID, ou a posição padrão que foi atribuída quando entrou em campo
-    let pos;
-    if (savedPos && savedPos[p.id]) {
-      pos = savedPos[p.id];
-    } else if (p.fieldX !== undefined && p.fieldY !== undefined) {
-      pos = { x: p.fieldX, y: p.fieldY };
-    } else {
-      // Fallback: próxima posição padrão disponível
-      const usedSlots = emCampo.filter(pl => pl.id !== p.id && (savedPos && savedPos[pl.id] || pl.fieldX !== undefined)).length;
-      const slot = Math.min(usedSlots, defaultPos.length - 1);
-      pos = { x: defaultPos[slot].x * 100, y: defaultPos[slot].y * 100 };
+  // Só reposiciona quem já tá em campo, mantém os jogadores
+  emCampo.forEach((p, i) => {
+    if (positions[i]) {
+      p.x = positions[i].x;
+      p.y = positions[i].y;
     }
-
-    el.style.left = pos.x + '%';
-    el.style.top = pos.y + '%';
-    el.innerHTML = `<div class="field-dot" ondblclick="substituirJogador(${p.id})">${globalIdx + 1}</div>
-                    <div class="field-name">${esc(shortName(p.name))}</div>`;
-    attachFieldDrag(el);
-    fp.appendChild(el);
   });
 
-  const bench = document.getElementById('bench-list');
-  const reservas = players.filter(p => !p.emCampo && p.status !== 'faltou');
+  saveData();
+  renderField();
+}
 
-  bench.innerHTML = reservas.length ? reservas.map(p => `
-    <div class="bench-chip" draggable="true" data-id="${p.id}"
-         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move';">
-      ${esc(shortName(p.name))}
-    </div>
-  `).join('') : '<span class="bench-empty">Todos em campo</span>';
+function selectPlayerOnField(playerId) {
+  selectedPlayerId = playerId;
+  const player = players.find(p => p.id === playerId);
+  const input = document.getElementById('edit-name-input');
+  const btn = document.getElementById('save-name-btn');
 
-  if (!players.length) {
-    fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Adicione jogadores<br>na aba Elenco</div>`;
-    bench.innerHTML = '<span class="bench-empty">—</span>';
+  if (player) {
+    input.value = player.name;
+    input.disabled = false;
+    btn.disabled = false;
+    input.focus();
   }
+
+  document.querySelectorAll('.field-player').forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.id) === playerId);
+  });
+}
+
+function savePlayerName() {
+  if (!selectedPlayerId) return;
+  const player = players.find(p => p.id === selectedPlayerId);
+  const newName = document.getElementById('edit-name-input').value.trim();
+  if (player && newName) {
+    player.name = newName;
+    saveData();
+    renderAll();
+    document.getElementById('edit-name-input').value = '';
+    document.getElementById('edit-name-input').disabled = true;
+    document.getElementById('save-name-btn').disabled = true;
+    selectedPlayerId = null;
+  }
+}
+
+function togglePlayerStatus(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  // Se tá ausente, volta pro banco
+  if (player.status === 'faltou') {
+    player.status = 'indefinido';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+  } 
+  // Se tá no banco ou em campo, marca como ausente
+  else {
+    player.status = 'faltou';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+  }
+
+  saveData();
+  renderAll();
+}
+
+function sendToBench(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// Menu de contexto pra campo
+function showContextMenu(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Remove menu antigo se tiver
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">
+      ❌ Marcar ausente
+    </div>
+  `;
+
+  // Posiciona no local do clique
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  // Fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+function closeContextMenu() {
+  const menu = document.getElementById('context-menu');
+  if (menu) menu.remove();
+}
+// ── DRAG & DROP ────────────────────────────────────────────────────────────
+function allowDrop(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(ev) {
+  ev.currentTarget.classList.remove('drag-over');
 }
 
 function dropNoCampo(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
+
   const id = parseInt(ev.dataTransfer.getData("text/plain"));
   const player = players.find(p => p.id === id);
 
-  // MUDANÇA: bloqueia se for 'faltou'
   if (!player || player.emCampo || player.status === 'faltou') return;
 
   const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou').length;
@@ -555,47 +291,427 @@ function dropNoCampo(ev) {
     return;
   }
 
+  const clientX = ev.clientX || (ev.changedTouches && ev.changedTouches[0].clientX);
+  const clientY = ev.clientY || (ev.changedTouches && ev.changedTouches[0].clientY);
+
+  if (!clientX ||!clientY) return;
+
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const x = ((clientX - rect.left) / rect.width) * 100;
+  const y = ((clientY - rect.top) / rect.height) * 100;
+
+  player.x = Math.max(5, Math.min(95, x));
+  player.y = Math.max(5, Math.min(95, y));
   player.emCampo = true;
+
   saveData();
-  renderField();
+  renderAll();
 }
 
-function savePositions() {
-  const els = document.querySelectorAll('.field-player');
-  const pos = {};
-  els.forEach(el => {
-    const id = el.dataset.id;
-    pos[id] = { x: parseFloat(el.style.left), y: parseFloat(el.style.top) };
-  });
-  try { localStorage.setItem('tatica_positions', JSON.stringify(pos)); } catch(e) {}
-}
+function dropToBench(ev) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.currentTarget.classList.remove('drag-over');
 
-function resetPositions() {
-  try { localStorage.removeItem('tatica_positions'); } catch(e) {}
-  renderField();
-}
+  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === playerId);
 
-function updateFieldNames() {
-  document.querySelectorAll('.field-player').forEach((el, i) => {
-    const n = el.querySelector('.field-name');
-    const id = parseInt(el.dataset.id);
-    const player = players.find(p => p.id === id);
-    if (n && player) n.textContent = shortName(player.name);
-  });
-}
-
-function shortName(name) {
-  if (!name) return '?';
-  const n = name.trim();
-  if (n.length <= 16) return n; // mostra até 16 letras completo
-
-  const parts = n.split(' ');
-  if (parts.length > 1) {
-    // Nome + inicial do último sobrenome: "João Silva" vira "João S."
-    return parts[0] + ' ' + parts[parts.length-1][0] + '.';
+  if (player) {
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
   }
-  return n.substring(0, 16);
 }
+
+function dropToAusentes(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+
+  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === playerId);
+
+  if (player) {
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    player.status = 'faltou';
+    saveData();
+    renderAll();
+  }
+}
+
+// ── PLAYERS ────────────────────────────────────────────────────────────────
+function addPlayer() {
+  const inputName = document.getElementById('new-player-input');
+  const inputNumber = document.getElementById('new-player-number');
+  const name = inputName.value.trim();
+  const number = parseInt(inputNumber.value);
+
+  if (!name) {
+    alert('Digite o nome do jogador');
+    return;
+  }
+
+  if (!number || number < 1 || number > 99) {
+    alert('Digite um número de camisa válido entre 1 e 99');
+    return;
+  }
+
+  // Verifica se o número já existe
+  if (players.some(p => p.number === number)) {
+    alert('Já existe um jogador com a camisa ' + number);
+    return;
+  }
+
+  players.push({
+    id: nextId++,
+    name: name,
+    number: number,
+    status: 'indefinido',
+    emCampo: false,
+    x: null,
+    y: null
+  });
+
+  inputName.value = '';
+  inputNumber.value = '';
+  saveData();
+  renderAll();
+  inputName.focus();
+}
+
+// Enter no campo de número pula pro nome
+document.getElementById('new-player-number').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('new-player-input').focus();
+});
+
+// Enter no campo de nome adiciona
+document.getElementById('new-player-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPlayer();
+});
+
+function removePlayer(id) {
+  if (!confirm('Remover jogador?')) return;
+  players = players.filter(p => p.id!== id);
+  saveData();
+  renderAll();
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderField();
+  renderBench();
+  renderAusentes();
+}
+
+function renderField() {
+  const fp = document.getElementById('field-players');
+  fp.innerHTML = '';
+
+  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou');
+
+  emCampo.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'field-player' + (i === 0? ' gk' : '');
+    el.dataset.id = p.id;
+    el.draggable = true;
+
+    if (p.x == null || p.y == null) {
+      p.x = 50;
+      p.y = 80;
+    }
+
+    el.style.left = p.x + '%';
+    el.style.top = p.y + '%';
+
+    el.ondragstart = (e) => {
+      e.dataTransfer.setData('text/plain', String(p.id));
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setDragImage(el, 25, 25);
+      el.classList.add('is-dragging');
+    };
+    el.ondragend = (e) => {
+      el.classList.remove('is-dragging');
+    };
+    
+    el.ondragstart = (e) => {
+  e.dataTransfer.setData('text/plain', String(p.id));
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setDragImage(el, 25, 25);
+  el.classList.add('is-dragging');
+};
+el.ondragend = (e) => {
+  el.classList.remove('is-dragging');
+};
+
+// Clique simples: edita nome
+el.onclick = (e) => {
+  e.stopPropagation();
+  selectPlayerOnField(p.id);
+};
+
+// Clique direito: menu
+el.oncontextmenu = (e) => {
+  showContextMenu(e, p.id);
+};
+
+// Long press no celular: menu
+let pressTimer;
+el.ontouchstart = (e) => {
+  pressTimer = setTimeout(() => {
+    showContextMenu(e, p.id);
+  }, 500); // 500ms segura = menu
+};
+el.ontouchend = () => {
+  clearTimeout(pressTimer);
+};
+el.ontouchmove = () => {
+  clearTimeout(pressTimer); // Cancela se arrastar
+};
+
+  el.innerHTML = `
+  <div class="field-dot">${p.number || i + 1}</div>
+  <div class="field-name">${esc(p.name)}</div>
+`;
+
+    attachFieldDrag(el);
+    fp.appendChild(el);
+  });
+
+  if (!emCampo.length) {
+    fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Arraste jogadores<br>do banco pra cá</div>`;
+  }
+}
+
+function renderAusentes() {
+  const ausentes = document.getElementById('ausentes-list');
+  const faltaram = players.filter(p => p.status === 'faltou');
+
+  ausentes.innerHTML = faltaram.length? faltaram.map(p => `
+    <div class="bench-chip ausente" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
+      <span class="status-btn faltou"></span>
+      <span class="player-name">${p.number? `#${p.number} ` : ''}${esc(p.name)}</span>
+      <button class="btn-action" onclick="voltarProBanco(${p.id})">Banco</button>
+      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
+    </div>
+  `).join('') : '<span class="bench-empty">Todos presentes</span>';
+
+  // CORRIGIDO: espaço adicionado
+  document.querySelectorAll('#ausentes-list .bench-chip').forEach(el => {
+    const playerId = parseInt(el.dataset.id);
+
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showContextMenuPlayer(e, playerId);
+    };
+
+    let pressTimer;
+    el.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => {
+        showContextMenuPlayer(e, playerId);
+      }, 500);
+    };
+    el.ontouchend = () => clearTimeout(pressTimer);
+    el.ontouchmove = () => clearTimeout(pressTimer);
+  });
+}
+
+function voltarProBanco(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.status = 'indefinido';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// Menu específico pra ausentes: só tem "Enviar pro banco"
+function showContextMenuAusente(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="voltarProBanco(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+// Função nova: tira o status de ausente e volta pro banco
+function voltarProBanco(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.status = 'indefinido'; // sai de 'faltou'
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// Menu específico pra ausentes
+function showContextMenuAusente(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+// ── FIELD DRAG LIVRE ───────────────────────────────────────────────────────
+function attachFieldDrag(el) {
+  el.dataset.moved = 'false';
+
+  el.addEventListener('mousedown', e => {
+    if (e.button!== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    fDragEl = el;
+    fDragEl.classList.add('is-dragging');
+
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
+  });
+
+  el.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    fDragEl = el;
+    fDragEl.classList.add('is-dragging');
+
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    fOffX = t.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = t.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
+  }, { passive: false });
+}
+
+function saveFieldPosition(el) {
+  const id = parseInt(el.dataset.id);
+  const player = players.find(p => p.id === id);
+  if (player) {
+    player.x = parseFloat(el.style.left);
+    player.y = parseFloat(el.style.top);
+    saveData();
+  }
+}
+
+document.addEventListener('mousemove', e => {
+  if (!fDragEl) return;
+
+  const moved = Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3;
+  if (moved) fDragEl.dataset.moved = 'true';
+
+  const pitch = document.getElementById('pitch-container');
+  const r = pitch.getBoundingClientRect();
+  const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+
+  if (inside) {
+    e.preventDefault();
+    const x = ((e.clientX - r.left - fOffX) / r.width) * 100;
+    const y = ((e.clientY - r.top - fOffY) / r.height) * 100;
+    fDragEl.style.left = Math.max(5, Math.min(95, x)) + '%';
+    fDragEl.style.top = Math.max(5, Math.min(95, y)) + '%';
+  }
+});
+
+document.addEventListener('touchmove', e => {
+  if (!fDragEl) return;
+
+  const t = e.touches[0];
+  const moved = Math.abs(t.clientX - startX) > 3 || Math.abs(t.clientY - startY) > 3;
+  if (moved) fDragEl.dataset.moved = 'true';
+
+  const pitch = document.getElementById('pitch-container');
+  const r = pitch.getBoundingClientRect();
+  const inside = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+
+  if (inside) {
+    e.preventDefault();
+    const x = ((t.clientX - r.left - fOffX) / r.width) * 100;
+    const y = ((t.clientY - r.top - fOffY) / r.height) * 100;
+    fDragEl.style.left = Math.max(5, Math.min(95, x)) + '%';
+    fDragEl.style.top = Math.max(5, Math.min(95, y)) + '%';
+  }
+}, { passive: false });
+
+document.addEventListener('mouseup', e => {
+  if (fDragEl) {
+    fDragEl.classList.remove('is-dragging');
+    if (fDragEl.dataset.moved === 'true') {
+      const pitch = document.getElementById('pitch-container');
+      const r = pitch.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (inside) saveFieldPosition(fDragEl);
+    }
+    fDragEl.dataset.moved = 'false';
+    fDragEl = null;
+  }
+});
+
+document.addEventListener('touchend', e => {
+  if (fDragEl) {
+    fDragEl.classList.remove('is-dragging');
+    if (fDragEl.dataset.moved === 'true') {
+      const pitch = document.getElementById('pitch-container');
+      const r = pitch.getBoundingClientRect();
+      const t = e.changedTouches[0];
+      const inside = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+      if (inside) saveFieldPosition(fDragEl);
+    }
+    fDragEl.dataset.moved = 'false';
+    fDragEl = null;
+  }
+});
 
 // ── SAVE / LOAD ────────────────────────────────────────────────────────────
 function saveData() {
@@ -613,7 +729,184 @@ try {
   const sf = localStorage.getItem('tatica_formation'); if (sf) document.getElementById('formation-select').value = sf;
 } catch(e) {}
 
-document.getElementById('formation-select').addEventListener('change', saveData);
+document.getElementById('formation-select').addEventListener('change', () => {
+  changeFormation();
+});
 
+function renderBench() {
+  const bench = document.getElementById('bench-list');
+  if (!bench) return;
+
+  const banco = players.filter(p =>!p.emCampo && p.status!== 'faltou');
+
+  bench.innerHTML = banco.length? banco.map(p => `
+    <div class="bench-chip" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
+      <span class="status-btn indefinido"></span>
+      <span class="player-name">${p.number? `#${p.number} ` : ''}${esc(p.name)}</span>
+      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
+    </div>
+  `).join('') : '<span class="bench-empty">Banco vazio</span>';
+
+  // CORRIGIDO: espaço adicionado
+  document.querySelectorAll('#bench-list .bench-chip').forEach(el => {
+    const playerId = parseInt(el.dataset.id);
+
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showContextMenuPlayer(e, playerId);
+    };
+
+    let pressTimer;
+    el.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => {
+        showContextMenuPlayer(e, playerId);
+      }, 500);
+    };
+    el.ontouchend = () => clearTimeout(pressTimer);
+    el.ontouchmove = () => clearTimeout(pressTimer);
+  });
+}
+
+function showContextMenuBench(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">
+      ❌ Marcar ausente
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+// ── MENU DE CONTEXTO AUSENTES ──────────────────────────────────────────────
+function showContextMenuAusente(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  document.getElementById('context-menu')?.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="voltarProBanco(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+function voltarProBanco(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.status = 'indefinido';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// ── MENU DE CONTEXTO JOGADOR ─────────────────────────────────────────────────
+function showContextMenuPlayer(e, playerId) {
+  e.stopPropagation();
+  document.getElementById('context-menu')?.remove();
+
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="editarCamisa(${playerId}); closeContextMenu();">
+      🔢 Trocar camisa ${player.number? `#${player.number}` : ''}
+    </div>
+    <div class="context-item" onclick="editarNome(${playerId}); closeContextMenu();">
+      ✏️ Editar nome
+    </div>
+    <div class="context-item danger" onclick="removePlayer(${playerId}); closeContextMenu();">
+      🗑️ Remover jogador
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+function editarCamisa(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const novoNumero = prompt(`Número da camisa do ${player.name}:`, player.number || '');
+  if (novoNumero === null) return;
+
+  const num = parseInt(novoNumero);
+  if (!num || num < 1 || num > 99) {
+    alert('Digite um número válido entre 1 e 99');
+    return;
+  }
+
+  const donoAtual = players.find(p => p.number === num && p.id!== playerId);
+
+  if (donoAtual) {
+    const trocar = confirm(`A camisa ${num} já é do ${donoAtual.name}. Trocar as camisas?`);
+    if (!trocar) return;
+
+    const numeroAntigo = player.number;
+    player.number = num;
+    donoAtual.number = numeroAntigo;
+  } else {
+    player.number = num;
+  }
+
+  saveData();
+  renderAll();
+}
+
+function editarNome(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const novoNome = prompt(`Novo nome:`, player.name);
+  if (novoNome === null ||!novoNome.trim()) return;
+
+  player.name = novoNome.trim();
+  saveData();
+  renderAll();
+}
 renderLoginDots();
-renderPlayerList();
+renderAll();
