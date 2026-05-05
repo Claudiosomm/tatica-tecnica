@@ -8,31 +8,44 @@
 </head>
 <body>
   <!-- LOGIN -->
-  <div id="login-screen" class="pin-screen">
-    <div class="pin-container">
-      <div class="pin-header">
-        <div class="pin-icon">🔒</div>
-        <h2>Tática FC</h2>
-        <p>Digite sua senha</p>
-      </div>
-      <div class="pin-dots" id="login-dots"></div>
-      <div class="pin-msg" id="login-msg"></div>
-      <div class="pin-keypad">
-        <button onclick="loginPress('1')">1</button>
-        <button onclick="loginPress('2')">2</button>
-        <button onclick="loginPress('3')">3</button>
-        <button onclick="loginPress('4')">4</button>
-        <button onclick="loginPress('5')">5</button>
-        <button onclick="loginPress('6')">6</button>
-        <button onclick="loginPress('7')">7</button>
-        <button onclick="loginPress('8')">8</button>
-        <button onclick="loginPress('9')">9</button>
-        <button onclick="openChangePassword()">⚙️</button>
-        <button onclick="loginPress('0')">0</button>
-        <button onclick="loginDel()">⌫</button>
-      </div>
+ <!-- LOGIN -->
+<div id="login-screen" class="pin-screen">
+  <div class="pin-container">
+    <div class="pin-brand">
+      <div class="brand-logo">⚽</div>
+      <h1 class="brand-title">Tática FC</h1>
+      <p class="brand-tagline">Gestão de elenco profissional</p>
+    </div>
+    
+    <div class="pin-header">
+      <div class="pin-icon">🔐</div>
+      <h2>Acesso Restrito</h2>
+      <p>Digite sua senha de 4 dígitos</p>
+    </div>
+    
+    <div class="pin-dots" id="login-dots"></div>
+    <div class="pin-msg" id="login-msg"></div>
+    
+    <div class="pin-keypad">
+      <button onclick="loginPress('1')">1</button>
+      <button onclick="loginPress('2')">2</button>
+      <button onclick="loginPress('3')">3</button>
+      <button onclick="loginPress('4')">4</button>
+      <button onclick="loginPress('5')">5</button>
+      <button onclick="loginPress('6')">6</button>
+      <button onclick="loginPress('7')">7</button>
+      <button onclick="loginPress('8')">8</button>
+      <button onclick="loginPress('9')">9</button>
+      <button onclick="openChangePassword()" class="pin-action">⚙️</button>
+      <button onclick="loginPress('0')">0</button>
+      <button onclick="loginDel()" class="pin-action">⌫</button>
+    </div>
+    
+    <div class="pin-footer">
+      <span>🔒 Criptografado localmente</span>
     </div>
   </div>
+</div>
 
   <!-- TROCAR SENHA -->
   <div id="change-screen" class="pin-screen hidden">
@@ -134,3 +147,4 @@
   <script src="script.js"></script>
 </body>
 </html>
+
