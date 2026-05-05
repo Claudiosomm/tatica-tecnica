@@ -1,1312 +1,912 @@
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: #0a0a0a;
-  color: #fff;
-  overflow-x: hidden;
-}
-
-.hidden { display: none!important; }
-
-/* LOGIN */
-.pin-screen {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-.pin-container {
-  width: 100%;
-  max-width: 360px;
-  padding: 20px;
-}
-.pin-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-.pin-icon { font-size: 48px; margin-bottom: 16px; }
-.pin-header h2 { font-size: 24px; margin-bottom: 8px; }
-.pin-header p { color: rgba(255,255,255,.6); font-size: 14px; }
-.pin-dots {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  min-height: 20px;
-}
-.pin-dot {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,.3);
-  border-radius: 50%;
-  transition: all0.2s;
-}
-.pin-dot.filled { background: #f0c040; border-color: #f0c040; }
-.pin-dot.error { background: #ff5555; border-color: #ff5555; animation: shake0.3s; }
-.pin-dot.success { background: #4caf50; border-color: #4caf50; }
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-.pin-msg {
-  text-align: center;
-  min-height: 20px;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-.pin-msg.error { color: #ff5555; }
-.pin-msg.success { color: #4caf50; }
-.pin-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.pin-keypad button {
-  aspect-ratio: 1;
-  border: none;
-  border-radius: 12px;
-  background: rgba(255,255,255,.08);
-  color: #fff;
-  font-size: 24px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all0.2s;
-}
-.pin-keypad button:active {
-  background: rgba(240,192,64,.3);
-  transform: scale(.95);
-}
-
-/* APP */
-.app {
-  max-width: 600px;
-  margin: 0 auto;
-  padding-bottom: 40px;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 12px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.app-header h1 {
-  font-size: 20px;
-  flex: 1;
-}
-#formation-select {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: #1a1a1a;
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* NAME EDITOR */
-.name-editor {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  background: #111;
-  border-bottom: 1px solid rgba(255,255,255,.1);
-}
-.name-editor input {
-  flex: 1;
-  padding: 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: #1a1a1a;
-  color: #fff;
-  font-size: 15px;
-}
-.name-editor input:disabled {
-  opacity:.5;
-  cursor: not-allowed;
-}
-.name-editor button {
-  padding: 12px 20px;
-  border-radius: 8px;
-  border: none;
-  background: #f0c040;
-  color: #000;
-  font-weight: 600;
-  cursor: pointer;
-}
-.name-editor button:disabled {
-  opacity:.3;
-  cursor: not-allowed;
-}
-
-/* CAMPO */
-#pitch-container {
-  width: 100%;
-  aspect-ratio: 7/10;
-  position: relative;
-  margin: 16px 0;
-  border-radius: 12px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
-}
-
-.pitch-lines {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, #1a5d1a 0%, #0d4d0d 100%);
-}
-
-.grass-pattern {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255,255,255,.03) 0px,
-    rgba(255,255,255,.03) 40px,
-    transparent 40px,
-    transparent 80px
-  );
-}
-
-.halfway-line {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 0;
-  border-top: 2px solid rgba(255,255,255,.4);
-}
-
-.center-circle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 80px;
-  height: 80px;
-  margin: -40px 0 0 -40px;
-  border: 2px solid rgba(255,255,255,.4);
-  border-radius: 50%;
-}
-
-.penalty-area {
-  position: absolute;
-  width: 60%;
-  height: 16%;
-  left: 20%;
-  border: 2px solid rgba(255,255,255,.4);
-}
-.penalty-area.top { top: 0; border-top: none; }
-.penalty-area.bottom { bottom: 0; border-bottom: none; }
-
-.goal-area {
-  position: absolute;
-  width: 30%;
-  height: 8%;
-  left: 35%;
-  border: 2px solid rgba(255,255,255,.4);
-}
-.goal-area.top { top: 0; border-top: none; }
-.goal-area.bottom { bottom: 0; border-bottom: none; }
-
-#field-slots {
-  position: absolute;
-  inset: 0;
-}
-
-.field-slot.drag-over {
-  border-color: #f0c040;
-  background: rgba(240,192,64,.1);
-  transform: scale(1.1);
-}
-.slot-number {
-  color: rgba(255,255,255,.3);
-  font-size: 12px;
-  font-weight: 700;
-  pointer-events: none;
-}
-
-.field-player:active {
-  cursor: grabbing;
-}
-.field-player.selected.field-dot {
-  box-shadow: 0 0 0 3px #f0c040;
-}
-.field-player.is-dragging {
-  z-index: 100;
-  opacity:.8;
-}
-
-/* JOGADOR NO CAMPO */
-.field-player {
-  position: absolute;
-  width: 50px;
-  height: 50px;
-  cursor: grab;
-  z-index: 10;
-  touch-action: none;
-}
-.field-player:active {
-  cursor: grabbing;
-}
-.field-player.selected .field-dot {
-  box-shadow: 0 0 0 4px #f0c040;
-  transform: scale(1.1);
-}
-.field-player.is-dragging {
-  z-index: 100;
-  opacity: 0.8;
-  transform: scale(1.15);
-}
-
-.field-dot {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4caf50, #2e7d32);
-  border: 3px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.4);
-  transition: all 0.2s;
-}
-.field-player.gk .field-dot {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-}
-
-.field-name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 4px;
-  background: rgba(0,0,0,0.9);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  border: 1px solid rgba(255,255,255,0.2);
-}
-
-.field-dot {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4caf50, #2e7d32);
-  border: 3px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,.4);
-  transition: all0.2s;
-}
-.field-player.gk.field-dot {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-}
-
-.field-name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 4px;
-  background: rgba(0,0,0,.8);
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-}
-
-/* ADD PLAYER */
-.add-player-bar {
-  display: flex;
-  gap: 8px;
-  padding: 0 12px;
-  margin-bottom: 16px;
-}
-.add-player-bar input {
-  flex: 1;
-  padding: 14px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.1);
-  background: #1a1a1a;
-  color: #fff;
-  font-size: 15px;
-}
-.add-player-bar button {
-  padding: 14px 24px;
-  border-radius: 8px;
-  border: none;
-  background: #f0c040;
-  color: #000;
-  font-weight: 700;
-  cursor: pointer;
-  font-size: 15px;
-}
-.add-player-bar button:active {
-  transform: scale(.95);
-}
-
-/* SECTIONS */
-.section {
-  padding: 0 12px;
-  margin-bottom: 20px;
-}
-.section h3 {
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(255,255,255,.5);
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.section.ausentes h3 {
-  color: #ff5555;
-}
-
-.player-list {
-  min-height: 70px;
-  background: rgba(255,255,255,.03);
-  border-radius: 12px;
-  padding: 8px;
-  border: 2px solid transparent;
-  transition: all0.2s;
-}
-.player-list.drag-over {
-  background: rgba(240,192,64,.08);
-  border-color: #f0c040;
-}
-
-
-.bench-chip:active {
-  cursor: grabbing;
-  background: #222;
-}
-.bench-chip.ausente {
-  background: #2a1515;
-  opacity:.7;
-}
-
-.status-btn {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all0.2s;
-}
-.status-btn.veio { background: #4caf50; }
-.status-btn.faltou { background: #ff5555; }
-.status-btn:active { transform: scale(1.2); }
-
-.btn-remove {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,.3);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 4px;
-}
-.btn-remove:active {
-  color: #ff5555;
-}
-
-.bench-empty {
-  display: block;
-  text-align: center;
-  color: rgba(255,255,255,.3);
-  padding: 20px;
-  font-size: 13px;
-}
-
-.context-item {
-  padding: 10px 16px;
-  cursor: pointer;
-  border-radius: 6px;
-  font-size: 14px;
-  white-space: nowrap;
-}
-
-.context-item:active {
-  background: rgba(240,192,64,.2);
-}
-
-.context-item:last-child {
-  border-bottom: none;
-}
-
-.bench-chip.ausente {
-  background: rgba(255,85,85,.1);
-  border: 1px solid rgba(255,85,85,.3);
-}
-
-.player-name {
-  flex: 1;
-  font-size: 15px;
-}
-
-.status-btn {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.status-btn.faltou {
-  background: #ff5555;
-}
-
-.status-btn.indefinido {
-  background: rgba(255,255,255,.3);
-}
-
-.btn-action {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  background: #f0c040;
-  color: #000;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.btn-action:active {
-  transform: scale(.95);
-  opacity: .8;
-}
-
-.btn-remove {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 6px;
-  background: rgba(255,85,85,.2);
-  color: #ff5555;
-  font-size: 18px;
-  cursor: pointer;
-  flex-shrink: 0;
-}
-
-.bench-empty {
-  display: block;
-  text-align: center;
-  padding: 20px;
-  color: rgba(255,255,255,.4);
-  font-size: 14px;
-}
-
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
-
-body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  color: #f1f5f9;
-  overflow-x: hidden;
-  min-height: 100vh;
-}
-
-.hidden { display: none!important; }
-
-/* LOGIN - MANTIDO */
-.pin-screen {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-.pin-container {
-  width: 100%;
-  max-width: 360px;
-  padding: 20px;
-}
-.pin-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-.pin-icon { font-size: 48px; margin-bottom: 16px; }
-.pin-header h2 { font-size: 24px; margin-bottom: 8px; }
-.pin-header p { color: rgba(255,255,255,.6); font-size: 14px; }
-.pin-dots {
-  display: flex;
-  justify-content: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  min-height: 20px;
-}
-.pin-dot {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255,255,255,.3);
-  border-radius: 50%;
-  transition: all0.2s;
-}
-.pin-dot.filled { background: #3b82f6; border-color: #3b82f6; }
-.pin-dot.error { background: #ef4444; border-color: #ef4444; animation: shake0.3s; }
-.pin-dot.success { background: #22c55e; border-color: #22c55e; }
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-5px); }
-  75% { transform: translateX(5px); }
-}
-.pin-msg {
-  text-align: center;
-  min-height: 20px;
-  font-size: 13px;
-  margin-bottom: 16px;
-}
-.pin-msg.error { color: #ef4444; }
-.pin-msg.success { color: #22c55e; }
-.pin-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 12px;
-}
-.pin-keypad button {
-  aspect-ratio: 1;
-  border: none;
-  border-radius: 12px;
-  background: rgba(255,255,255,.08);
-  color: #fff;
-  font-size: 24px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all0.2s;
-}
-.pin-keypad button:active {
-  background: rgba(59,130,246,.3);
-  transform: scale(.95);
-}
-
-/* APP */
-.app {
-  max-width: 600px;
-  margin: 0 auto;
-  padding-bottom: 40px;
-}
-
-.app-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 16px 12px;
-  background: rgba(30,41,59,0.7);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-}
-.app-header h1 {
-  font-size: 20px;
-  flex: 1;
-  font-weight: 700;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  -webkit-text-fill-color: transparent;
-}
-#formation-select {
-  padding: 8px 12px;
-  border-radius: 8px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(15,23,42,0.6);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-/* ADD PLAYER BAR */
-.add-player-bar {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  background: rgba(30,41,59,0.7);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,.1);
-}
-.input-number {
-  width: 70px;
-  padding: 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(15,23,42,0.6);
-  color: #fff;
-  font-size: 15px;
-  text-align: center;
-  font-weight: 600;
-  transition: all0.2s;
-}
-.input-number:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-}
-.add-player-bar input[type="text"] {
-  flex: 1;
-  padding: 12px 16px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(15,23,42,0.6);
-  color: #fff;
-  font-size: 15px;
-  transition: all0.2s;
-}
-.add-player-bar input[type="text"]:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-}
-.add-player-bar button {
-  padding: 12px 20px;
-  border-radius: 10px;
-  border: none;
-  background: #3b82f6;
-  color: #fff;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all0.2s;
-  box-shadow: 0 2px 8px rgba(59,130,246,0.3);
-}
-.add-player-bar button:active {
-  transform: scale(.95);
-  background: #2563eb;
-}
-
-/* CAMPO - MANTIDO COM MELHORIAS */
-#pitch-container {
-  width: 100%;
-  aspect-ratio: 7/10;
-  position: relative;
-  margin: 16px 0;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0,0,0,.5);
-}
-
-.pitch-lines {
-  position: absolute;
-  inset: 0;
-  background: 
-    radial-gradient(circle at 50% 50%, rgba(255,255,255,0.08) 0%, transparent 25%),
-    linear-gradient(180deg, #15803d 0%, #166534 100%);
-  border: 2px solid rgba(255,255,255,0.2);
-}
-
-.grass-pattern {
-  position: absolute;
-  inset: 0;
-  background: repeating-linear-gradient(
-    90deg,
-    rgba(255,255,255,.03) 0px,
-    rgba(255,255,255,.03) 40px,
-    transparent 40px,
-    transparent 80px
-  );
-}
-
-.halfway-line {
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 0;
-  border-top: 2px solid rgba(255,255,255,.4);
-}
-
-.center-circle {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  width: 80px;
-  height: 80px;
-  margin: -40px 0 0 -40px;
-  border: 2px solid rgba(255,255,255,.4);
-  border-radius: 50%;
-}
-
-.penalty-area {
-  position: absolute;
-  width: 60%;
-  height: 16%;
-  left: 20%;
-  border: 2px solid rgba(255,255,255,.4);
-}
-.penalty-area.top { top: 0; border-top: none; }
-.penalty-area.bottom { bottom: 0; border-bottom: none; }
-
-.goal-area {
-  position: absolute;
-  width: 30%;
-  height: 8%;
-  left: 35%;
-  border: 2px solid rgba(255,255,255,.4);
-}
-.goal-area.top { top: 0; border-top: none; }
-.goal-area.bottom { bottom: 0; border-bottom: none; }
-
-#field-slots {
-  position: absolute;
-  inset: 0;
-}
-
-/* JOGADOR NO CAMPO - MELHORADO */
-/* JOGADOR NO CAMPO */
-
-.field-player:active {
-  cursor: grabbing;
-}
-.field-player.selected .field-dot {
-  box-shadow: 0 0 0 4px #f0c040;
-  transform: scale(1.1);
-}
-.field-player.is-dragging {
-  z-index: 100;
-  opacity: .8;
-  transform: scale(1.15);
-}
-
-.field-dot {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #4caf50, #2e7d32);
-  border: 3px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: #fff;
-  box-shadow: 0 4px 12px rgba(0,0,0,.4);
-  transition: all 0.2s;
-}
-.field-player.gk .field-dot {
-  background: linear-gradient(135deg, #ff9800, #f57c00);
-}
-
-.field-name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 4px;
-  background: rgba(0,0,0,.9);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  border: 1px solid rgba(255,255,255,.2);
-}
-
-.field-player:active {
-  cursor: grabbing;
-}
-.field-player.selected .field-dot {
-  box-shadow: 0 0 0 4px #3b82f6, 0 8px 20px rgba(59,130,246,0.6);
-  transform: scale(1.1);
-}
-.field-player.is-dragging {
-  z-index: 100;
-  opacity:.8;
-  transform: scale(1.15);
-}
-
-.field-dot {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #3b82f6, #2563eb);
-  border: 3px solid #fff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 18px;
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(59,130,246,.5);
-  transition: all0.2s;
-  animation: dropIn 0.3s ease;
-}
-
-@keyframes dropIn {
-  from { transform: scale(0) rotate(180deg); opacity: 0; }
-  to { transform: scale(1) rotate(0deg); opacity: 1; }
-}
-
-.field-player.gk .field-dot {
-  background: linear-gradient(135deg, #f59e0b, #d97706);
-}
-
-.field-name {
-  position: absolute;
-  top: 100%;
-  left: 50%;
-  transform: translateX(-50%);
-  margin-top: 4px;
-  background: rgba(0,0,0,.9);
-  padding: 3px 8px;
-  border-radius: 4px;
-  font-size: 11px;
-  font-weight: 600;
-  white-space: nowrap;
-  pointer-events: none;
-  border: 1px solid rgba(255,255,255,.2);
-}
-
-/* SECTIONS - MELHORADO */
-.section {
-  padding: 0 12px;
-  margin-bottom: 20px;
-}
-.section h3 {
-  font-size: 13px;
-  font-weight: 700;
-  color: rgba(241,245,249,.6);
-  margin-bottom: 10px;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-}
-.section.ausentes h3 {
-  color: #ef4444;
-}
-
-.player-list {
-  min-height: 70px;
-  background: rgba(30,41,59,0.4);
-  backdrop-filter: blur(8px);
-  border-radius: 12px;
-  padding: 12px;
-  border: 2px dashed transparent;
-  transition: all0.2s;
-}
-.player-list.drag-over {
-  background: rgba(59,130,246,.1);
-  border-color: #3b82f6;
-}
-
-/* BENCH CHIP - MELHORADO */
-
-.bench-chip:hover {
-  background: rgba(71,85,105,0.9);
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-.bench-chip:active {
-  cursor: grabbing;
-  background: rgba(71,85,105,0.9);
-  transform: scale(0.98);
-}
-.bench-chip.ausente {
-  background: rgba(239,68,68,.1);
-  border: 1px solid rgba(239,68,68,.3);
-  opacity:.8;
-}
-
-.bench-chip {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 12px;
-  background: #1a1a1a;
-  border-radius: 8px;
-  margin-bottom: 8px;
-  cursor: grab;
-  touch-action: pan-y;
-  transition: all 0.2s;
-}
-.bench-chip:active {
-  cursor: grabbing;
-  background: #222;
-}
-.bench-chip.ausente {
-  background: #2a1515;
-  opacity: .7;
-}
-
-.player-name {
-  flex: 1;
-  font-size: 15px;
-}
-
-.status-btn {
-  width: 14px;
-  height: 14px;
-  border-radius: 50%;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all 0.2s;
-}
-.status-btn.veio { background: #4caf50; }
-.status-btn.faltou { background: #ff5555; }
-.status-btn.indefinido { background: rgba(255,255,255,.3); }
-.status-btn:active { transform: scale(1.2); }
-
-.btn-action {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 6px;
-  background: #f0c040;
-  color: #000;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-.btn-action:active {
-  transform: scale(.95);
-  opacity: .8;
-}
-
-.btn-remove {
-  margin-left: auto;
-  background: none;
-  border: none;
-  color: rgba(255,255,255,.3);
-  font-size: 20px;
-  cursor: pointer;
-  padding: 0 4px;
-}
-.btn-remove:active {
-  color: #ff5555;
-}
-
-.player-name {
-  flex: 1;
-  font-size: 15px;
-  font-weight: 600;
-}
-
-.status-btn {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-.status-btn.faltou {
-  background: #ef4444;
-}
-.status-btn.indefinido {
-  background: rgba(255,255,255,.3);
-}
-
-.btn-action {
-  padding: 6px 12px;
-  border: none;
-  border-radius: 8px;
-  background: #3b82f6;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all0.2s;
-}
-.btn-action:active {
-  transform: scale(.95);
-  background: #2563eb;
-}
-
-.btn-remove {
-  width: 28px;
-  height: 28px;
-  border: none;
-  border-radius: 8px;
-  background: transparent;
-  color: rgba(255,255,255,.4);
-  font-size: 18px;
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: all0.2s;
-}
-.btn-remove:active {
-  background: rgba(239,68,68,.2);
-  color: #ef4444;
-}
-
-.bench-empty {
-  display: block;
-  text-align: center;
-  padding: 20px;
-  color: rgba(255,255,255,.4);
-  font-size: 14px;
-  font-style: italic;
-}
-
-/* MENU CONTEXTO - MELHORADO */
-
-
-@keyframes menuIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
-}
-
-.context-item {
-  padding: 10px 16px;
-  cursor: pointer;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-  transition: all.15s;
-}
-
-.context-item:hover {
-  background: rgba(59,130,246,.2);
-}
-
-.context-item.danger {
-  color: #f87171;
-}
-
-.context-item.danger:hover {
-  background: rgba(239,68,68,.2);
-}
-
-#context-menu {
-  position: fixed;
-  background: #1a1a1a;
-  border: 1px solid rgba(255,255,255,.2);
-  border-radius: 8px;
-  padding: 4px;
-  z-index: 10000;
-  box-shadow: 0 4px 12px rgba(0,0,0,.5);
-  min-width: 180px;
-}
-
-.context-item:active {
-  background: rgba(240,192,64,.2);
-}
-
-/* LOGIN PREMIUM */
-.pin-screen {
-  position: fixed;
-  inset: 0;
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-  overflow: hidden;
-}
-
-.pin-screen::before {
-  content: '';
-  position: absolute;
-  width: 500px;
-  height: 500px;
-  background: radial-gradient(circle, rgba(59,130,246,0.15) 0%, transparent 70%);
-  top: -250px;
-  right: -250px;
-  animation: pulse 8s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); opacity: 0.5; }
-  50% { transform: scale(1.2); opacity: 0.8; }
-}
-
-.pin-container {
-  width: 100%;
-  max-width: 380px;
-  padding: 40px 24px;
-  position: relative;
-  z-index: 1;
-}
-
-/* BRAND */
-.pin-brand {
-  text-align: center;
-  margin-bottom: 40px;
-}
-
-.brand-logo {
-  font-size: 64px;
-  margin-bottom: 12px;
-  filter: drop-shadow(0 4px 16px rgba(59,130,246,0.6));
-  animation: float 3s ease-in-out infinite;
-}
-
-@keyframes float {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-10px); }
-}
-
-.brand-title {
-  font-size: 32px;
-  font-weight: 700;
-  margin: 0 0 8px;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  -webkit-text-fill-color: transparent;
-}
-
-.brand-tagline {
-  font-size: 13px;
-  color: rgba(241,245,249,.5);
-  font-weight: 500;
-  letter-spacing: 0.5px;
-}
-
-/* HEADER */
-.pin-header {
-  text-align: center;
-  margin-bottom: 32px;
-}
-
-.pin-icon { 
-  font-size: 40px; 
-  margin-bottom: 12px;
-  opacity: 0.8;
-}
-
-.pin-header h2 { 
-  font-size: 20px; 
-  margin-bottom: 8px;
-  font-weight: 600;
-}
-
-.pin-header p { 
-  color: rgba(241,245,249,.6); 
-  font-size: 14px;
-}
-
-/* DOTS */
-.pin-dots {
-  display: flex;
-  justify-content: center;
-  gap: 16px;
-  margin-bottom: 24px;
-  min-height: 24px;
-}
-
-.pin-dot {
-  width: 18px;
-  height: 18px;
-  border: 2px solid rgba(255,255,255,.3);
-  border-radius: 50%;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  background: transparent;
-}
-
-.pin-dot.filled { 
-  background: #3b82f6; 
-  border-color: #3b82f6;
-  box-shadow: 0 0 16px rgba(59,130,246,0.6);
-  transform: scale(1.1);
-}
-
-.pin-dot.error { 
-  background: #ef4444; 
-  border-color: #ef4444; 
-  animation: shake 0.3s;
-  box-shadow: 0 0 16px rgba(239,68,68,0.6);
-}
-
-.pin-dot.success { 
-  background: #22c55e; 
-  border-color: #22c55e;
-  box-shadow: 0 0 16px rgba(34,197,94,0.6);
-}
-
-@keyframes shake {
-  0%, 100% { transform: translateX(0); }
-  25% { transform: translateX(-8px); }
-  75% { transform: translateX(8px); }
-}
-
-/* MSG */
-.pin-msg {
-  text-align: center;
-  min-height: 24px;
-  font-size: 13px;
-  margin-bottom: 20px;
-  font-weight: 500;
-}
-
-.pin-msg.error { 
-  color: #f87171;
-}
-
-.pin-msg.success { 
-  color: #4ade80;
-}
-
-/* KEYPAD */
-.pin-keypad {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  margin-bottom: 24px;
-}
-
-.pin-keypad button {
-  aspect-ratio: 1;
-  border: none;
-  border-radius: 16px;
-  background: rgba(51,65,85,0.6);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,.1);
-  color: #fff;
-  font-size: 26px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
-}
-
-.pin-keypad button:active {
-  background: rgba(59,130,246,.4);
-  transform: scale(.92);
-  box-shadow: 0 2px 8px rgba(59,130,246,0.5);
-}
-
-.pin-keypad button.pin-action {
-  background: rgba(30,41,59,0.8);
-  font-size: 22px;
-}
-
-.pin-keypad button.pin-action:active {
-  background: rgba(239,68,68,.3);
-}
-
-/* FOOTER */
-.pin-footer {
-  text-align: center;
-  font-size: 11px;
-  color: rgba(241,245,249,.4);
-  font-weight: 500;
-}
+// ── SENHAS ─────────────────────────────────────────────────────────────────
+const SENHA_MESTRE = '130162';
+let senhaAcesso = localStorage.getItem('tatica_senha') || '0905';
+
+// ── STATE ──────────────────────────────────────────────────────────────────
+let players = [], nextId = 1;
+let selectedPlayerId = null;
+let fDragEl = null;
+let fOffX = 0, fOffY = 0;
+let startX = 0, startY = 0;
+
+// ── LOGIN ──────────────────────────────────────────────────────────────────
+let loginEntry = '';
+function renderLoginDots() {
+  const c = document.getElementById('login-dots');
+  c.innerHTML = '';
+  for (let i = 0; i < senhaAcesso.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'pin-dot' + (i < loginEntry.length? ' filled' : '');
+    c.appendChild(d);
+  }
+}
+function loginPress(digit) {
+  if (loginEntry.length >= senhaAcesso.length) return;
+  loginEntry += digit;
+  renderLoginDots();
+  if (loginEntry.length === senhaAcesso.length) {
+    setTimeout(() => {
+      if (loginEntry === senhaAcesso) {
+        document.getElementById('login-screen').classList.add('hidden');
+      } else {
+        document.querySelectorAll('#login-dots.pin-dot').forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
+        document.getElementById('login-msg').textContent = 'Senha incorreta';
+        setTimeout(() => { loginEntry = ''; renderLoginDots(); document.getElementById('login-msg').textContent = ''; }, 900);
+      }
+    }, 100);
+  }
+}
+function loginDel() {
+  loginEntry = loginEntry.slice(0, -1);
+  renderLoginDots();
+  document.getElementById('login-msg').textContent = '';
+}
+
+// ── CHANGE PASSWORD ────────────────────────────────────────────────────────
+let changeStep = 'master';
+let changeEntry = '', newSenhaTemp = '';
+const STEP_LEN = { master: SENHA_MESTRE.length, new: 4, confirm: 4 };
+function renderChangeDots() {
+  const c = document.getElementById('change-dots');
+  c.innerHTML = '';
+  for (let i = 0; i < STEP_LEN[changeStep]; i++) {
+    const d = document.createElement('div');
+    d.className = 'pin-dot' + (i < changeEntry.length? ' filled' : '');
+    c.appendChild(d);
+  }
+}
+function openChangePassword() {
+  changeStep = 'master'; changeEntry = ''; newSenhaTemp = '';
+  document.getElementById('change-icon').textContent = '🔐';
+  document.getElementById('change-subtitle').textContent = 'Digite a senha mestre para confirmar';
+  document.getElementById('change-msg').textContent = '';
+  document.getElementById('change-msg').className = 'pin-msg';
+  renderChangeDots();
+  document.getElementById('change-screen').classList.remove('hidden');
+}
+function closeChangePassword() {
+  document.getElementById('change-screen').classList.add('hidden');
+}
+function changePress(digit) {
+  if (changeEntry.length >= STEP_LEN[changeStep]) return;
+  changeEntry += digit;
+  renderChangeDots();
+  if (changeEntry.length === STEP_LEN[changeStep]) setTimeout(() => checkChangeStep(), 150);
+}
+function changeDel() {
+  changeEntry = changeEntry.slice(0, -1);
+  renderChangeDots();
+  document.getElementById('change-msg').textContent = '';
+}
+function checkChangeStep() {
+  const msg = document.getElementById('change-msg');
+  if (changeStep === 'master') {
+    if (changeEntry === SENHA_MESTRE) {
+      changeStep = 'new'; changeEntry = '';
+      document.getElementById('change-icon').textContent = '🆕';
+      document.getElementById('change-subtitle').textContent = 'Digite a nova senha (4 dígitos)';
+      msg.textContent = ''; renderChangeDots();
+    } else {
+      errorShake('change-dots'); msg.className = 'pin-msg error'; msg.textContent = 'Senha mestre incorreta';
+      setTimeout(() => { changeEntry = ''; renderChangeDots(); msg.textContent = ''; }, 900);
+    }
+  } else if (changeStep === 'new') {
+    newSenhaTemp = changeEntry; changeStep = 'confirm'; changeEntry = '';
+    document.getElementById('change-icon').textContent = '✅';
+    document.getElementById('change-subtitle').textContent = 'Confirme a nova senha';
+    msg.textContent = ''; renderChangeDots();
+  } else if (changeStep === 'confirm') {
+    if (changeEntry === newSenhaTemp) {
+      senhaAcesso = newSenhaTemp;
+      localStorage.setItem('tatica_senha', senhaAcesso);
+      msg.className = 'pin-msg success'; msg.textContent = '✅ Senha alterada com sucesso!';
+      document.querySelectorAll('#change-dots.pin-dot').forEach(d => { d.classList.remove('filled'); d.classList.add('success'); });
+      setTimeout(() => closeChangePassword(), 1500);
+    } else {
+      errorShake('change-dots'); msg.className = 'pin-msg error'; msg.textContent = 'Senhas não coincidem. Tente de novo.';
+      setTimeout(() => {
+        changeStep = 'new'; changeEntry = ''; newSenhaTemp = '';
+        document.getElementById('change-icon').textContent = '🆕';
+        document.getElementById('change-subtitle').textContent = 'Digite a nova senha (4 dígitos)';
+        msg.textContent = ''; renderChangeDots();
+      }, 1000);
+    }
+  }
+}
+function errorShake(dotsId) {
+  document.querySelectorAll('#' + dotsId + '.pin-dot').forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
+  setTimeout(() => document.querySelectorAll('#' + dotsId + '.pin-dot').forEach(d => d.classList.remove('error')), 700);
+}
+
+// ── FORMATIONS ─────────────────────────────────────────────────────────────
+const FORMATIONS = {
+  "4-4-2": [[1,[50]],[4,[20,38,62,80]],[4,[20,38,62,80]],[2,[35,65]]],
+  "4-3-3": [[1,[50]],[4,[20,38,62,80]],[3,[28,50,72]],[3,[25,50,75]]],
+  "4-2-3-1": [[1,[50]],[4,[20,38,62,80]],[2,[35,65]],[3,[25,50,75]],[1,[50]]],
+  "4-5-1": [[1,[50]],[4,[20,38,62,80]],[5,[16,31,50,69,84]],[1,[50]]],
+  "3-5-2": [[1,[50]],[3,[28,50,72]],[5,[16,31,50,69,84]],[2,[35,65]]],
+  "3-4-3": [[1,[50]],[3,[28,50,72]],[4,[20,38,62,80]],[3,[25,50,75]]],
+  "5-3-2": [[1,[50]],[5,[16,31,50,69,84]],[3,[28,50,72]],[2,[35,65]]],
+  "5-4-1": [[1,[50]],[5,[16,31,50,69,84]],[4,[20,38,62,80]],[1,[50]]],
+  "4-1-4-1": [[1,[50]],[4,[20,38,62,80]],[1,[50]],[4,[20,38,62,80]],[1,[50]]],
+  "4-3-2-1": [[1,[50]],[4,[20,38,62,80]],[3,[28,50,72]],[2,[35,65]],[1,[50]]]
+};
+
+function getFormationPositions(key) {
+  const lines = FORMATIONS[key];
+  if (!lines) return [];
+  const n = lines.length;
+  const top = 0.08, bot = 0.92, span = bot - top;
+  return lines.flatMap(([,xs], li) => xs.map(x => ({
+    x: x,
+    y: (bot - (li/(n-1))*span) * 100
+  })));
+}
+
+// ── FIELD MANAGEMENT ───────────────────────────────────────────────────────
+function changeFormation() {
+  const key = document.getElementById('formation-select').value;
+  const positions = getFormationPositions(key);
+  const emCampo = players.filter(p => p.emCampo);
+
+  // Só reposiciona quem já tá em campo, mantém os jogadores
+  emCampo.forEach((p, i) => {
+    if (positions[i]) {
+      p.x = positions[i].x;
+      p.y = positions[i].y;
+    }
+  });
+
+  saveData();
+  renderField();
+}
+
+function selectPlayerOnField(playerId) {
+  selectedPlayerId = playerId;
+  const player = players.find(p => p.id === playerId);
+  const input = document.getElementById('edit-name-input');
+  const btn = document.getElementById('save-name-btn');
+
+  if (player) {
+    input.value = player.name;
+    input.disabled = false;
+    btn.disabled = false;
+    input.focus();
+  }
+
+  document.querySelectorAll('.field-player').forEach(el => {
+    el.classList.toggle('selected', parseInt(el.dataset.id) === playerId);
+  });
+}
+
+function savePlayerName() {
+  if (!selectedPlayerId) return;
+  const player = players.find(p => p.id === selectedPlayerId);
+  const newName = document.getElementById('edit-name-input').value.trim();
+  if (player && newName) {
+    player.name = newName;
+    saveData();
+    renderAll();
+    document.getElementById('edit-name-input').value = '';
+    document.getElementById('edit-name-input').disabled = true;
+    document.getElementById('save-name-btn').disabled = true;
+    selectedPlayerId = null;
+  }
+}
+
+function togglePlayerStatus(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  // Se tá ausente, volta pro banco
+  if (player.status === 'faltou') {
+    player.status = 'indefinido';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+  } 
+  // Se tá no banco ou em campo, marca como ausente
+  else {
+    player.status = 'faltou';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+  }
+
+  saveData();
+  renderAll();
+}
+
+function sendToBench(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// Menu de contexto pra campo
+function showContextMenu(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  // Remove menu antigo se tiver
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">
+      ❌ Marcar ausente
+    </div>
+  `;
+
+  // Posiciona no local do clique
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  // Fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+function closeContextMenu() {
+  const menu = document.getElementById('context-menu');
+  if (menu) menu.remove();
+}
+// ── DRAG & DROP ────────────────────────────────────────────────────────────
+function allowDrop(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.add('drag-over');
+}
+
+function dragLeave(ev) {
+  ev.currentTarget.classList.remove('drag-over');
+}
+
+function dropNoCampo(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+
+  const id = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === id);
+
+  if (!player || player.emCampo || player.status === 'faltou') return;
+
+  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou').length;
+  if (emCampo >= 11) {
+    alert('Máximo de 11 jogadores em campo!');
+    return;
+  }
+
+  const clientX = ev.clientX || (ev.changedTouches && ev.changedTouches[0].clientX);
+  const clientY = ev.clientY || (ev.changedTouches && ev.changedTouches[0].clientY);
+
+  if (!clientX ||!clientY) return;
+
+  const rect = ev.currentTarget.getBoundingClientRect();
+  const x = ((clientX - rect.left) / rect.width) * 100;
+  const y = ((clientY - rect.top) / rect.height) * 100;
+
+  player.x = Math.max(5, Math.min(95, x));
+  player.y = Math.max(5, Math.min(95, y));
+  player.emCampo = true;
+
+  saveData();
+  renderAll();
+}
+
+function dropToBench(ev) {
+  ev.preventDefault();
+  ev.stopPropagation();
+  ev.currentTarget.classList.remove('drag-over');
+
+  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === playerId);
+
+  if (player) {
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+function dropToAusentes(ev) {
+  ev.preventDefault();
+  ev.currentTarget.classList.remove('drag-over');
+
+  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
+  const player = players.find(p => p.id === playerId);
+
+  if (player) {
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    player.status = 'faltou';
+    saveData();
+    renderAll();
+  }
+}
+
+// ── PLAYERS ────────────────────────────────────────────────────────────────
+function addPlayer() {
+  const inputName = document.getElementById('new-player-input');
+  const inputNumber = document.getElementById('new-player-number');
+  const name = inputName.value.trim();
+  const number = parseInt(inputNumber.value);
+
+  if (!name) {
+    alert('Digite o nome do jogador');
+    return;
+  }
+
+  if (!number || number < 1 || number > 99) {
+    alert('Digite um número de camisa válido entre 1 e 99');
+    return;
+  }
+
+  // Verifica se o número já existe
+  if (players.some(p => p.number === number)) {
+    alert('Já existe um jogador com a camisa ' + number);
+    return;
+  }
+
+  players.push({
+    id: nextId++,
+    name: name,
+    number: number,
+    status: 'indefinido',
+    emCampo: false,
+    x: null,
+    y: null
+  });
+
+  inputName.value = '';
+  inputNumber.value = '';
+  saveData();
+  renderAll();
+  inputName.focus();
+}
+
+// Enter no campo de número pula pro nome
+document.getElementById('new-player-number').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('new-player-input').focus();
+});
+
+// Enter no campo de nome adiciona
+document.getElementById('new-player-input').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addPlayer();
+});
+
+function removePlayer(id) {
+  if (!confirm('Remover jogador?')) return;
+  players = players.filter(p => p.id!== id);
+  saveData();
+  renderAll();
+}
+
+function esc(s) { return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── RENDER ─────────────────────────────────────────────────────────────────
+function renderAll() {
+  renderField();
+  renderBench();
+  renderAusentes();
+}
+
+function renderField() {
+  const fp = document.getElementById('field-players');
+  fp.innerHTML = '';
+
+  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou');
+
+  emCampo.forEach((p, i) => {
+    const el = document.createElement('div');
+    el.className = 'field-player' + (i === 0? ' gk' : '');
+    el.dataset.id = p.id;
+    el.draggable = true;
+
+    if (p.x == null || p.y == null) {
+      p.x = 50;
+      p.y = 80;
+    }
+
+    el.style.left = p.x + '%';
+    el.style.top = p.y + '%';
+
+    el.ondragstart = (e) => {
+      e.dataTransfer.setData('text/plain', String(p.id));
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setDragImage(el, 25, 25);
+      el.classList.add('is-dragging');
+    };
+    el.ondragend = (e) => {
+      el.classList.remove('is-dragging');
+    };
+    
+    el.ondragstart = (e) => {
+  e.dataTransfer.setData('text/plain', String(p.id));
+  e.dataTransfer.effectAllowed = 'move';
+  e.dataTransfer.setDragImage(el, 25, 25);
+  el.classList.add('is-dragging');
+};
+el.ondragend = (e) => {
+  el.classList.remove('is-dragging');
+};
+
+// Clique simples: edita nome
+el.onclick = (e) => {
+  e.stopPropagation();
+  selectPlayerOnField(p.id);
+};
+
+// Clique direito: menu
+el.oncontextmenu = (e) => {
+  showContextMenu(e, p.id);
+};
+
+// Long press no celular: menu
+let pressTimer;
+el.ontouchstart = (e) => {
+  pressTimer = setTimeout(() => {
+    showContextMenu(e, p.id);
+  }, 500); // 500ms segura = menu
+};
+el.ontouchend = () => {
+  clearTimeout(pressTimer);
+};
+el.ontouchmove = () => {
+  clearTimeout(pressTimer); // Cancela se arrastar
+};
+
+  el.innerHTML = `
+  <div class="field-dot">${p.number || i + 1}</div>
+  <div class="field-name">${esc(p.name)}</div>
+`;
+
+    attachFieldDrag(el);
+    fp.appendChild(el);
+  });
+
+  if (!emCampo.length) {
+    fp.innerHTML = `<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;color:rgba(255,255,255,.4);font-size:13px;font-weight:600;pointer-events:none;">Arraste jogadores<br>do banco pra cá</div>`;
+  }
+}
+
+function renderAusentes() {
+  const ausentes = document.getElementById('ausentes-list');
+  const faltaram = players.filter(p => p.status === 'faltou');
+
+  ausentes.innerHTML = faltaram.length? faltaram.map(p => `
+    <div class="bench-chip ausente" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
+      <span class="status-btn faltou"></span>
+      <span class="player-name">${p.number? `#${p.number} ` : ''}${esc(p.name)}</span>
+      <button class="btn-action" onclick="voltarProBanco(${p.id})">Banco</button>
+      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
+    </div>
+  `).join('') : '<span class="bench-empty">Todos presentes</span>';
+
+  // CORRIGIDO: espaço adicionado
+  document.querySelectorAll('#ausentes-list .bench-chip').forEach(el => {
+    const playerId = parseInt(el.dataset.id);
+
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showContextMenuPlayer(e, playerId);
+    };
+
+    let pressTimer;
+    el.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => {
+        showContextMenuPlayer(e, playerId);
+      }, 500);
+    };
+    el.ontouchend = () => clearTimeout(pressTimer);
+    el.ontouchmove = () => clearTimeout(pressTimer);
+  });
+}
+
+function voltarProBanco(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.status = 'indefinido';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// Menu específico pra ausentes: só tem "Enviar pro banco"
+function showContextMenuAusente(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="voltarProBanco(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+// Função nova: tira o status de ausente e volta pro banco
+function voltarProBanco(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.status = 'indefinido'; // sai de 'faltou'
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// Menu específico pra ausentes
+function showContextMenuAusente(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+// ── FIELD DRAG LIVRE ───────────────────────────────────────────────────────
+function attachFieldDrag(el) {
+  el.dataset.moved = 'false';
+
+  el.addEventListener('mousedown', e => {
+    if (e.button!== 0) return;
+    e.preventDefault();
+    e.stopPropagation();
+
+    fDragEl = el;
+    fDragEl.classList.add('is-dragging');
+
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    startX = e.clientX;
+    startY = e.clientY;
+    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
+  });
+
+  el.addEventListener('touchstart', e => {
+    e.stopPropagation();
+    fDragEl = el;
+    fDragEl.classList.add('is-dragging');
+
+    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    const t = e.touches[0];
+    startX = t.clientX;
+    startY = t.clientY;
+    fOffX = t.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = t.clientY - r.top - parseFloat(fDragEl.style.top) /100 * r.height;
+  }, { passive: false });
+}
+
+function saveFieldPosition(el) {
+  const id = parseInt(el.dataset.id);
+  const player = players.find(p => p.id === id);
+  if (player) {
+    player.x = parseFloat(el.style.left);
+    player.y = parseFloat(el.style.top);
+    saveData();
+  }
+}
+
+document.addEventListener('mousemove', e => {
+  if (!fDragEl) return;
+
+  const moved = Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3;
+  if (moved) fDragEl.dataset.moved = 'true';
+
+  const pitch = document.getElementById('pitch-container');
+  const r = pitch.getBoundingClientRect();
+  const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+
+  if (inside) {
+    e.preventDefault();
+    const x = ((e.clientX - r.left - fOffX) / r.width) * 100;
+    const y = ((e.clientY - r.top - fOffY) / r.height) * 100;
+    fDragEl.style.left = Math.max(5, Math.min(95, x)) + '%';
+    fDragEl.style.top = Math.max(5, Math.min(95, y)) + '%';
+  }
+});
+
+document.addEventListener('touchmove', e => {
+  if (!fDragEl) return;
+
+  const t = e.touches[0];
+  const moved = Math.abs(t.clientX - startX) > 3 || Math.abs(t.clientY - startY) > 3;
+  if (moved) fDragEl.dataset.moved = 'true';
+
+  const pitch = document.getElementById('pitch-container');
+  const r = pitch.getBoundingClientRect();
+  const inside = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+
+  if (inside) {
+    e.preventDefault();
+    const x = ((t.clientX - r.left - fOffX) / r.width) * 100;
+    const y = ((t.clientY - r.top - fOffY) / r.height) * 100;
+    fDragEl.style.left = Math.max(5, Math.min(95, x)) + '%';
+    fDragEl.style.top = Math.max(5, Math.min(95, y)) + '%';
+  }
+}, { passive: false });
+
+document.addEventListener('mouseup', e => {
+  if (fDragEl) {
+    fDragEl.classList.remove('is-dragging');
+    if (fDragEl.dataset.moved === 'true') {
+      const pitch = document.getElementById('pitch-container');
+      const r = pitch.getBoundingClientRect();
+      const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+      if (inside) saveFieldPosition(fDragEl);
+    }
+    fDragEl.dataset.moved = 'false';
+    fDragEl = null;
+  }
+});
+
+document.addEventListener('touchend', e => {
+  if (fDragEl) {
+    fDragEl.classList.remove('is-dragging');
+    if (fDragEl.dataset.moved === 'true') {
+      const pitch = document.getElementById('pitch-container');
+      const r = pitch.getBoundingClientRect();
+      const t = e.changedTouches[0];
+      const inside = t.clientX >= r.left && t.clientX <= r.right && t.clientY >= r.top && t.clientY <= r.bottom;
+      if (inside) saveFieldPosition(fDragEl);
+    }
+    fDragEl.dataset.moved = 'false';
+    fDragEl = null;
+  }
+});
+
+// ── SAVE / LOAD ────────────────────────────────────────────────────────────
+function saveData() {
+  try {
+    localStorage.setItem('tatica_players', JSON.stringify(players));
+    localStorage.setItem('tatica_nextId', String(nextId));
+    localStorage.setItem('tatica_formation', document.getElementById('formation-select').value);
+  } catch(e) {}
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────
+try {
+  const sp = localStorage.getItem('tatica_players'); if (sp) players = JSON.parse(sp);
+  const si = localStorage.getItem('tatica_nextId'); if (si) nextId = parseInt(si);
+  const sf = localStorage.getItem('tatica_formation'); if (sf) document.getElementById('formation-select').value = sf;
+} catch(e) {}
+
+document.getElementById('formation-select').addEventListener('change', () => {
+  changeFormation();
+});
+
+function renderBench() {
+  const bench = document.getElementById('bench-list');
+  if (!bench) return;
+
+  const banco = players.filter(p =>!p.emCampo && p.status!== 'faltou');
+
+  bench.innerHTML = banco.length? banco.map(p => `
+    <div class="bench-chip" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
+      <span class="status-btn indefinido"></span>
+      <span class="player-name">${p.number? `#${p.number} ` : ''}${esc(p.name)}</span>
+      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
+    </div>
+  `).join('') : '<span class="bench-empty">Banco vazio</span>';
+
+  // CORRIGIDO: espaço adicionado
+  document.querySelectorAll('#bench-list .bench-chip').forEach(el => {
+    const playerId = parseInt(el.dataset.id);
+
+    el.oncontextmenu = (e) => {
+      e.preventDefault();
+      showContextMenuPlayer(e, playerId);
+    };
+
+    let pressTimer;
+    el.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => {
+        showContextMenuPlayer(e, playerId);
+      }, 500);
+    };
+    el.ontouchend = () => clearTimeout(pressTimer);
+    el.ontouchmove = () => clearTimeout(pressTimer);
+  });
+}
+
+function showContextMenuBench(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">
+      ❌ Marcar ausente
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+// ── MENU DE CONTEXTO AUSENTES ──────────────────────────────────────────────
+function showContextMenuAusente(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+
+  document.getElementById('context-menu')?.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="voltarProBanco(${playerId}); closeContextMenu();">
+      📤 Enviar pro banco
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+function voltarProBanco(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (player) {
+    player.status = 'indefinido';
+    player.emCampo = false;
+    player.x = null;
+    player.y = null;
+    saveData();
+    renderAll();
+  }
+}
+
+// ── MENU DE CONTEXTO JOGADOR ─────────────────────────────────────────────────
+function showContextMenuPlayer(e, playerId) {
+  e.stopPropagation();
+  document.getElementById('context-menu')?.remove();
+
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="editarCamisa(${playerId}); closeContextMenu();">
+      🔢 Trocar camisa ${player.number? `#${player.number}` : ''}
+    </div>
+    <div class="context-item" onclick="editarNome(${playerId}); closeContextMenu();">
+      ✏️ Editar nome
+    </div>
+    <div class="context-item danger" onclick="removePlayer(${playerId}); closeContextMenu();">
+      🗑️ Remover jogador
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
+  const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
+function editarCamisa(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const novoNumero = prompt(`Número da camisa do ${player.name}:`, player.number || '');
+  if (novoNumero === null) return;
+
+  const num = parseInt(novoNumero);
+  if (!num || num < 1 || num > 99) {
+    alert('Digite um número válido entre 1 e 99');
+    return;
+  }
+
+  const donoAtual = players.find(p => p.number === num && p.id!== playerId);
+
+  if (donoAtual) {
+    const trocar = confirm(`A camisa ${num} já é do ${donoAtual.name}. Trocar as camisas?`);
+    if (!trocar) return;
+
+    const numeroAntigo = player.number;
+    player.number = num;
+    donoAtual.number = numeroAntigo;
+  } else {
+    player.number = num;
+  }
+
+  saveData();
+  renderAll();
+}
+
+function editarNome(playerId) {
+  const player = players.find(p => p.id === playerId);
+  if (!player) return;
+
+  const novoNome = prompt(`Novo nome:`, player.name);
+  if (novoNome === null ||!novoNome.trim()) return;
+
+  player.name = novoNome.trim();
+  saveData();
+  renderAll();
+}
+renderLoginDots();
+renderAll();
