@@ -1,46 +1,71 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>⚽ Tática</title>
-<script defer src="script.js"></script>
-<link rel="stylesheet" href="style.css">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tática FC</title>
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<header>
-  <h1>⚽ Tática</h1>
-  <div class="header-right">
-    <div class="tab-bar">
-      <button class="tab-btn active" onclick="switchTab('jogadores',this)">Elenco</button>
-      <button class="tab-btn" onclick="switchTab('campo',this)">Campo</button>
+  <!-- LOGIN -->
+  <div id="login-screen" class="pin-screen">
+    <div class="pin-container">
+      <div class="pin-header">
+        <div class="pin-icon">🔒</div>
+        <h2>Tática FC</h2>
+        <p>Digite sua senha</p>
+      </div>
+      <div class="pin-dots" id="login-dots"></div>
+      <div class="pin-msg" id="login-msg"></div>
+      <div class="pin-keypad">
+        <button onclick="loginPress('1')">1</button>
+        <button onclick="loginPress('2')">2</button>
+        <button onclick="loginPress('3')">3</button>
+        <button onclick="loginPress('4')">4</button>
+        <button onclick="loginPress('5')">5</button>
+        <button onclick="loginPress('6')">6</button>
+        <button onclick="loginPress('7')">7</button>
+        <button onclick="loginPress('8')">8</button>
+        <button onclick="loginPress('9')">9</button>
+        <button onclick="openChangePassword()">⚙️</button>
+        <button onclick="loginPress('0')">0</button>
+        <button onclick="loginDel()">⌫</button>
+      </div>
     </div>
-    <button class="btn-settings" onclick="switchTab('settings',this)" title="Configurações">⚙️</button>
   </div>
-</header>
 
-<!-- JOGADORES -->
-<div id="view-jogadores" class="view active">
-  <div class="player-list-wrap">
-    <div class="add-player-row">
-      <input id="new-player-input" type="text" placeholder="Nome do jogador..." maxlength="20" autocomplete="off" autocorrect="off" spellcheck="false">
-      <button class="btn-add" onclick="addPlayer()">+</button>
-    </div>
-    <div class="players-label">ELENCO</div>
-    <div class="player-list" id="player-list">
-      <div class="empty-msg">Nenhum jogador. Adicione acima ☝️</div>
+  <!-- TROCAR SENHA -->
+  <div id="change-screen" class="pin-screen hidden">
+    <div class="pin-container">
+      <div class="pin-header">
+        <div class="pin-icon" id="change-icon">🔐</div>
+        <h2>Alterar Senha</h2>
+        <p id="change-subtitle">Digite a senha mestre</p>
+      </div>
+      <div class="pin-dots" id="change-dots"></div>
+      <div class="pin-msg" id="change-msg"></div>
+      <div class="pin-keypad">
+        <button onclick="changePress('1')">1</button>
+        <button onclick="changePress('2')">2</button>
+        <button onclick="changePress('3')">3</button>
+        <button onclick="changePress('4')">4</button>
+        <button onclick="changePress('5')">5</button>
+        <button onclick="changePress('6')">6</button>
+        <button onclick="changePress('7')">7</button>
+        <button onclick="changePress('8')">8</button>
+        <button onclick="changePress('9')">9</button>
+        <button onclick="closeChangePassword()">✕</button>
+        <button onclick="changePress('0')">0</button>
+        <button onclick="changeDel()">⌫</button>
+      </div>
     </div>
   </div>
-</div>
 
-<!-- CAMPO -->
-<div id="view-campo" class="view">
-  <div class="field-view-wrap">
-    <div class="formation-row">
-      <span class="formation-label">FORMAÇÃO</span>
-      <select class="formation-select" id="formation-select" onchange="applyFormation()">
+  <!-- APP -->
+  <div class="app">
+    <header class="app-header">
+      <h1>Tática FC</h1>
+      <select id="formation-select" onchange="changeFormation()">
         <option value="4-4-2">4-4-2</option>
         <option value="4-3-3">4-3-3</option>
         <option value="4-2-3-1">4-2-3-1</option>
@@ -52,117 +77,60 @@
         <option value="4-1-4-1">4-1-4-1</option>
         <option value="4-3-2-1">4-3-2-1</option>
       </select>
-      <button class="btn-reset" onclick="resetPositions()" title="Resetar posições">↺</button>
+    </header>
+
+    <!-- EDITOR DE NOME -->
+    <div class="name-editor" id="name-editor">
+      <input type="text" id="edit-name-input" placeholder="Selecione um jogador no campo" disabled>
+      <button onclick="savePlayerName()" id="save-name-btn" disabled>Salvar</button>
     </div>
-    <div class="pitch-container" id="pitch-container"
+
+    <div id="pitch-container"
          ondragover="allowDrop(event)"
          ondragleave="dragLeave(event)"
          ondrop="dropNoCampo(event)">
-        <svg class="pitch-svg" viewBox="0 0 340 520" xmlns="http://www.w3.org/2000/svg">
-        <rect width="340" height="520" fill="#2a7032"/>
-        <rect x="0" y="0" width="340" height="52" fill="#286e30"/>
-        <rect x="0" y="104" width="340" height="52" fill="#286e30"/>
-        <rect x="0" y="208" width="340" height="52" fill="#286e30"/>
-        <rect x="0" y="312" width="340" height="52" fill="#286e30"/>
-        <rect x="0" y="416" width="340" height="52" fill="#286e30"/>
-        <rect x="10" y="10" width="320" height="500" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="2" rx="4"/>
-        <line x1="10" y1="260" x2="330" y2="260" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <circle cx="170" cy="260" r="50" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <circle cx="170" cy="260" r="3" fill="rgba(255,255,255,.55)"/>
-        <rect x="80" y="10" width="180" height="80" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <rect x="120" y="10" width="100" height="30" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <circle cx="170" cy="68" r="2.5" fill="rgba(255,255,255,.55)"/>
-        <path d="M 135 90 A 40 40 0 0 1 205 90" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <rect x="80" y="430" width="180" height="80" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <rect x="120" y="480" width="100" height="30" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <circle cx="170" cy="452" r="2.5" fill="rgba(255,255,255,.55)"/>
-        <path d="M 135 430 A 40 40 0 0 0 205 430" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <rect x="140" y="0" width="60" height="12" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <rect x="140" y="508" width="60" height="12" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <path d="M10 22 A12 12 0 0 1 22 10" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <path d="M318 10 A12 12 0 0 1 330 22" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <path d="M330 498 A12 12 0 0 1 318 510" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-        <path d="M22 510 A12 12 0 0 1 10 498" fill="none" stroke="rgba(255,255,255,.55)" stroke-width="1.5"/>
-      </svg>
+      <div class="pitch-lines">
+        <div class="grass-pattern"></div>
+        <div class="center-circle"></div>
+        <div class="penalty-area top"></div>
+        <div class="penalty-area bottom"></div>
+        <div class="goal-area top"></div>
+        <div class="goal-area bottom"></div>
+        <div class="halfway-line"></div>
+      </div>
       <div id="field-players"></div>
     </div>
-    <div class="legend-row">
-      <div class="legend-item"><div class="legend-dot pl"></div> Jogadores</div>
-      <div class="legend-item"><div class="legend-dot gk"></div> Goleiro</div>
+
+    <!-- ADICIONAR JOGADOR -->
+    <div class="add-player-bar">
+  <input type="number" id="new-player-number" placeholder="Nº" 
+         min="1" max="99" class="input-number">
+  <input type="text" id="new-player-input" placeholder="Nome do jogador..." 
+         autocomplete="off" autocorrect="off" spellcheck="false">
+  <button onclick="addPlayer()">+ Adicionar</button>
+</div>
+
+    <!-- BANCO DE RESERVAS -->
+    <div class="section">
+      <h3>Banco de Reservas</h3>
+      <div id="bench-list" class="player-list"
+           ondragover="allowDrop(event)" 
+           ondragleave="dragLeave(event)" 
+           ondrop="dropToBench(event)">
+      </div>
     </div>
-    <div class="bench-section">
-      <div class="bench-title">BANCO DE RESERVAS</div>
-      <div id="bench-list"
-     ondragover="allowDrop(event)"
-     ondragleave="dragLeave(event)"
-     ondrop="dropNaReserva(event)">
-</div>
+
+    <!-- AUSENTES -->
+    <div class="section ausentes">
+      <h3>Ausentes</h3>
+      <div id="ausentes-list" class="player-list"
+           ondragover="allowDrop(event)" 
+           ondragleave="dragLeave(event)" 
+           ondrop="dropToAusentes(event)">
+      </div>
     </div>
   </div>
-</div>
 
-<!-- SETTINGS -->
-<div id="view-settings" class="view">
-  <div class="settings-wrap">
-    <div class="settings-title">⚙️ Configurações</div>
-    <div class="settings-card">
-      <h3>🔑 Trocar Senha de Acesso</h3>
-      <p>Somente você pode alterar a senha. Será solicitada a <strong style="color:var(--white)">senha mestre</strong> para confirmar a alteração.</p>
-      <button class="btn-primary" onclick="openChangePassword()">Trocar Senha</button>
-    </div>
-  </div>
-</div>
-
-<!-- FOOTER -->
-<footer>
-  © Cláudio Silva &nbsp;|&nbsp; <a href="tel:11979583596">(11) 97958-3596</a>
-</footer>
-
-<!-- LOGIN SCREEN -->
-<div id="login-screen" class="pin-screen">
-  <div class="lock-icon">🔒</div>
-  <h2>Tática</h2>
-  <p>Digite a senha para entrar</p>
-  <div class="pin-dots" id="login-dots"></div>
-  <div class="pin-grid">
-    <button class="pin-btn" onclick="loginPress('1')">1</button>
-    <button class="pin-btn" onclick="loginPress('2')">2</button>
-    <button class="pin-btn" onclick="loginPress('3')">3</button>
-    <button class="pin-btn" onclick="loginPress('4')">4</button>
-    <button class="pin-btn" onclick="loginPress('5')">5</button>
-    <button class="pin-btn" onclick="loginPress('6')">6</button>
-    <button class="pin-btn" onclick="loginPress('7')">7</button>
-    <button class="pin-btn" onclick="loginPress('8')">8</button>
-    <button class="pin-btn" onclick="loginPress('9')">9</button>
-    <div></div>
-    <button class="pin-btn zero" onclick="loginPress('0')">0</button>
-    <button class="pin-btn del" onclick="loginDel()">⌫</button>
-  </div>
-  <div class="pin-msg error" id="login-msg"></div>
-</div>
-
-<!-- CHANGE PASSWORD SCREEN -->
-<div id="change-screen" class="pin-screen hidden">
-  <div class="lock-icon" id="change-icon">🔐</div>
-  <h2>Trocar Senha</h2>
-  <p id="change-subtitle">Digite a senha mestre para confirmar</p>
-  <div class="pin-dots" id="change-dots"></div>
-  <div class="pin-grid">
-    <button class="pin-btn" onclick="changePress('1')">1</button>
-    <button class="pin-btn" onclick="changePress('2')">2</button>
-    <button class="pin-btn" onclick="changePress('3')">3</button>
-    <button class="pin-btn" onclick="changePress('4')">4</button>
-    <button class="pin-btn" onclick="changePress('5')">5</button>
-    <button class="pin-btn" onclick="changePress('6')">6</button>
-    <button class="pin-btn" onclick="changePress('7')">7</button>
-    <button class="pin-btn" onclick="changePress('8')">8</button>
-    <button class="pin-btn" onclick="changePress('9')">9</button>
-    <button class="pin-btn cancel-btn" onclick="closeChangePassword()">CANCELAR</button>
-    <button class="pin-btn zero" onclick="changePress('0')">0</button>
-    <button class="pin-btn del" onclick="changeDel()">⌫</button>
-  </div>
-  <div class="pin-msg" id="change-msg"></div>
-</div>
-
+  <script src="script.js"></script>
 </body>
 </html>
