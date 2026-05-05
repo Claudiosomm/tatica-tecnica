@@ -491,34 +491,16 @@ function renderAusentes() {
   const ausentes = document.getElementById('ausentes-list');
   const faltaram = players.filter(p => p.status === 'faltou');
 
-  ausentes.innerHTML = faltaram.length? faltaram.map(p => `
+  ausentes.innerHTML = faltaram.length ? faltaram.map(p => `
     <div class="bench-chip ausente" draggable="true" data-id="${p.id}"
-         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move';">
       <span class="status-btn faltou"></span>
-      <span class="player-name">${p.number? `#${p.number} ` : ''}${esc(p.name)}</span>
+     <span class="player-name">${p.number ? `#${p.number} ` : ''}${esc(p.name)}</span>
+
       <button class="btn-action" onclick="voltarProBanco(${p.id})">Banco</button>
       <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
     </div>
   `).join('') : '<span class="bench-empty">Todos presentes</span>';
-
-  // CORRIGIDO: espaço adicionado
-  document.querySelectorAll('#ausentes-list .bench-chip').forEach(el => {
-    const playerId = parseInt(el.dataset.id);
-
-    el.oncontextmenu = (e) => {
-      e.preventDefault();
-      showContextMenuPlayer(e, playerId);
-    };
-
-    let pressTimer;
-    el.ontouchstart = (e) => {
-      pressTimer = setTimeout(() => {
-        showContextMenuPlayer(e, playerId);
-      }, 500);
-    };
-    el.ontouchend = () => clearTimeout(pressTimer);
-    el.ontouchmove = () => clearTimeout(pressTimer);
-  });
 }
 
 function voltarProBanco(playerId) {
@@ -735,7 +717,7 @@ document.getElementById('formation-select').addEventListener('change', () => {
 
 function renderBench() {
   const bench = document.getElementById('bench-list');
-  if (!bench) return;
+  if (!bench) return; // caso não exista o elemento no HTML
 
   const banco = players.filter(p =>!p.emCampo && p.status!== 'faltou');
 
@@ -743,24 +725,23 @@ function renderBench() {
     <div class="bench-chip" draggable="true" data-id="${p.id}"
          ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
       <span class="status-btn indefinido"></span>
-      <span class="player-name">${p.number? `#${p.number} ` : ''}${esc(p.name)}</span>
+      ${esc(p.name)}
       <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
     </div>
   `).join('') : '<span class="bench-empty">Banco vazio</span>';
 
-  // CORRIGIDO: espaço adicionado
-  document.querySelectorAll('#bench-list .bench-chip').forEach(el => {
+  // Adiciona menu de contexto no banco também
+  document.querySelectorAll('#bench-list.bench-chip').forEach(el => {
     const playerId = parseInt(el.dataset.id);
 
     el.oncontextmenu = (e) => {
-      e.preventDefault();
-      showContextMenuPlayer(e, playerId);
+      showContextMenuBench(e, playerId);
     };
 
     let pressTimer;
     el.ontouchstart = (e) => {
       pressTimer = setTimeout(() => {
-        showContextMenuPlayer(e, playerId);
+        showContextMenuBench(e, playerId);
       }, 500);
     };
     el.ontouchend = () => clearTimeout(pressTimer);
@@ -834,79 +815,5 @@ function voltarProBanco(playerId) {
   }
 }
 
-// ── MENU DE CONTEXTO JOGADOR ─────────────────────────────────────────────────
-function showContextMenuPlayer(e, playerId) {
-  e.stopPropagation();
-  document.getElementById('context-menu')?.remove();
-
-  const player = players.find(p => p.id === playerId);
-  if (!player) return;
-
-  const menu = document.createElement('div');
-  menu.id = 'context-menu';
-  menu.innerHTML = `
-    <div class="context-item" onclick="editarCamisa(${playerId}); closeContextMenu();">
-      🔢 Trocar camisa ${player.number? `#${player.number}` : ''}
-    </div>
-    <div class="context-item" onclick="editarNome(${playerId}); closeContextMenu();">
-      ✏️ Editar nome
-    </div>
-    <div class="context-item danger" onclick="removePlayer(${playerId}); closeContextMenu();">
-      🗑️ Remover jogador
-    </div>
-  `;
-
-  const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-  const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-
-  document.body.appendChild(menu);
-  setTimeout(() => {
-    document.addEventListener('click', closeContextMenu, { once: true });
-  }, 10);
-}
-
-function editarCamisa(playerId) {
-  const player = players.find(p => p.id === playerId);
-  if (!player) return;
-
-  const novoNumero = prompt(`Número da camisa do ${player.name}:`, player.number || '');
-  if (novoNumero === null) return;
-
-  const num = parseInt(novoNumero);
-  if (!num || num < 1 || num > 99) {
-    alert('Digite um número válido entre 1 e 99');
-    return;
-  }
-
-  const donoAtual = players.find(p => p.number === num && p.id!== playerId);
-
-  if (donoAtual) {
-    const trocar = confirm(`A camisa ${num} já é do ${donoAtual.name}. Trocar as camisas?`);
-    if (!trocar) return;
-
-    const numeroAntigo = player.number;
-    player.number = num;
-    donoAtual.number = numeroAntigo;
-  } else {
-    player.number = num;
-  }
-
-  saveData();
-  renderAll();
-}
-
-function editarNome(playerId) {
-  const player = players.find(p => p.id === playerId);
-  if (!player) return;
-
-  const novoNome = prompt(`Novo nome:`, player.name);
-  if (novoNome === null ||!novoNome.trim()) return;
-
-  player.name = novoNome.trim();
-  saveData();
-  renderAll();
-}
 renderLoginDots();
 renderAll();
