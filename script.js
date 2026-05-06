@@ -27,11 +27,24 @@ function loginPress(digit) {
   if (loginEntry.length === senhaAcesso.length) {
     setTimeout(() => {
       if (loginEntry === senhaAcesso) {
-        document.getElementById('login-screen').classList.add('hidden');
+        document.querySelectorAll('#login-dots .pin-dot').forEach(d => d.classList.add('success'));
+        document.getElementById('login-msg').textContent = 'Acesso liberado!';
+        document.getElementById('login-msg').className = 'pin-msg success';
+        setTimeout(() => {
+          document.getElementById('login-screen').classList.add('hidden');
+          document.querySelector('.app').classList.remove('hidden');
+          renderAll();
+        }, 500);
       } else {
-        document.querySelectorAll('#login-dots.pin-dot').forEach(d => { d.classList.remove('filled'); d.classList.add('error'); });
+        document.querySelectorAll('#login-dots .pin-dot').forEach(d => d.classList.add('error'));
         document.getElementById('login-msg').textContent = 'Senha incorreta';
-        setTimeout(() => { loginEntry = ''; renderLoginDots(); document.getElementById('login-msg').textContent = ''; }, 900);
+        document.getElementById('login-msg').className = 'pin-msg error';
+        setTimeout(() => { 
+          loginEntry = ''; 
+          renderLoginDots(); 
+          document.getElementById('login-msg').textContent = ''; 
+          document.getElementById('login-msg').className = 'pin-msg';
+        }, 900);
       }
     }, 100);
   }
@@ -814,6 +827,34 @@ function voltarProBanco(playerId) {
     renderAll();
   }
 }
+
+function updateStats() {
+  const total = players.length;
+  const emCampo = players.filter(p => p.emCampo).length;
+  const banco = players.filter(p => !p.emCampo && p.status !== 'faltou').length;
+  const ausentes = players.filter(p => p.status === 'faltou').length;
+  
+  document.getElementById('total-jogadores').textContent = total;
+  document.getElementById('em-campo-count').textContent = emCampo;
+  document.getElementById('banco-count').textContent = banco;
+  document.getElementById('ausentes-count').textContent = ausentes;
+}
+
+// Chama essa função no final de renderAll()
+function renderAll() {
+  renderField();
+  renderBench();
+  renderAusentes();
+  updateStats(); // ADICIONA ESSA LINHA
+}
+
+window.onload = function() {
+  document.getElementById('login-screen').classList.remove('hidden');
+  document.querySelector('.app').classList.add('hidden');
+  renderLoginDots(); // cria as 4 bolinhas vazias
+  loadPlayers();
+  renderAll();
+};
 
 renderLoginDots();
 renderAll();
