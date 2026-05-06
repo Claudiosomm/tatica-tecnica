@@ -676,3 +676,22 @@ body {
   font-weight: 600;
   cursor: pointer;
 }
+
+/* MOBILE - BOLINHAS MENORES */
+@media (max-width: 768px) {
+  .field-player {
+    width: 38px;
+    height: 38px;
+  }
+  
+  .field-dot {
+    font-size: 13px;
+    border-width: 2px;
+  }
+  
+  .field-name {
+    font-size: 8px;
+    padding: 1px 4px;
+    margin-top: 1px;
+  }
+}
