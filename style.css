@@ -163,6 +163,20 @@ body {
   margin: 0 auto;
   padding-bottom: 40px;
 }
+/* HEADER PREMIUM */
+.app-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 16px;
+  background: rgba(30,41,59,0.7);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(255,255,255,.1);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  margin-bottom: 16px;
+}
 .app-header h1 {
   font-size: 20px;
   flex: 1;
@@ -199,7 +213,6 @@ body {
     grid-template-rows: auto auto;
   }
   .add-player-bar button {
-    grid-column: 1 / -1;
     width: 100%;
   }
 }
@@ -222,8 +235,8 @@ body {
   box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
 }
 .add-player-bar input[type="text"] {
-  flex: 1 1 120px; /* cresce, encolhe, mínimo 120px */
-  min-width: 0; /* importante pro flex não estourar */
+  flex: 1 1 120px;
+  min-width: 0;
   padding: 12px 16px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.2);
@@ -231,6 +244,11 @@ body {
   color: #fff;
   font-size: 15px;
   transition: all 0.2s;
+}
+.add-player-bar input[type="text"]:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
 }
 .add-player-bar button {
   flex: 0 0 auto;
@@ -243,8 +261,14 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(59,130,246,0.3);
-  white-space: nowrap; /* não quebra o texto do botão */
+  white-space: nowrap;
 }
+
+.add-player-bar button:active {
+  transform: scale(.95);
+  background: #2563eb;
+}
+
 .add-player-bar button:active {
   transform: scale(.95);
   background: #2563eb;
@@ -408,6 +432,13 @@ body {
   color: #ef4444;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
 .player-list {
   min-height: 70px;
   background: rgba(30,41,59,0.4);
@@ -557,21 +588,6 @@ body {
   background: rgba(239,68,68,.2);
 }
 
-/* HEADER PREMIUM */
-.app-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 16px;
-  background: rgba(30,41,59,0.7);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid rgba(255,255,255,.1);
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  margin-bottom: 16px;
-}
-
 .header-left {
   display: flex;
   align-items: center;
@@ -634,36 +650,6 @@ body {
 
 .add-icon {
   font-size: 18px;
-}
-
-.add-player-bar {
-  display: flex;
-  gap: 8px;
-  background: transparent;
-  border: none;
-  padding: 0;
-}
-
-/* SECTION HEADERS */
-.section {
-  padding: 0 12px;
-  margin-bottom: 24px;
-}
-
-.section-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-}
-
-.section h3 {
-  font-size: 14px;
-  font-weight: 700;
-  color: rgba(241,245,249,.7);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  margin: 0;
 }
 
 .badge {
