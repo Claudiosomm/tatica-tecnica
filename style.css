@@ -185,8 +185,8 @@ body {
 
 /* ADD PLAYER BAR */
 .add-player-bar {
-  display: grid;
-  grid-template-columns: 70px 1fr auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   padding: 12px;
   background: rgba(30,41,59,0.7);
@@ -205,6 +205,7 @@ body {
 }
 .input-number {
   width: 70px;
+  min-width: 60px;
   padding: 12px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.2);
@@ -221,7 +222,8 @@ body {
   box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
 }
 .add-player-bar input[type="text"] {
-  flex: 1;
+  flex: 1 1 120px; /* cresce, encolhe, mínimo 120px */
+  min-width: 0; /* importante pro flex não estourar */
   padding: 12px 16px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.2);
@@ -230,12 +232,8 @@ body {
   font-size: 15px;
   transition: all 0.2s;
 }
-.add-player-bar input[type="text"]:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59,130,246,0.2);
-}
 .add-player-bar button {
+  flex: 0 0 auto;
   padding: 12px 20px;
   border-radius: 10px;
   border: none;
@@ -245,6 +243,7 @@ body {
   cursor: pointer;
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(59,130,246,0.3);
+  white-space: nowrap; /* não quebra o texto do botão */
 }
 .add-player-bar button:active {
   transform: scale(.95);
