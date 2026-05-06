@@ -184,12 +184,23 @@ body {
 
 /* ADD PLAYER BAR */
 .add-player-bar {
-  display: flex;
+  display: grid;
+  grid-template-columns: 70px 1fr auto;
   gap: 8px;
   padding: 12px;
   background: rgba(30,41,59,0.7);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid rgba(255,255,255,.1);
+}
+@media (max-width: 480px) {
+  .add-player-bar {
+    grid-template-columns: 60px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .add-player-bar button {
+    grid-column: 1 / -1;
+    width: 100%;
+  }
 }
 .input-number {
   width: 70px;
@@ -319,8 +330,8 @@ body {
 /* JOGADOR NO CAMPO - MELHORADO */
 .field-player {
   position: absolute;
-  width: 56px;
-  height: 56px;
+  width: 48px; /* era 56px */
+  height: 48px; /* era 56px */
   cursor: grab;
   z-index: 10;
   touch-action: none;
@@ -338,7 +349,6 @@ body {
   opacity:.8;
   transform: scale(1.15);
 }
-
 .field-dot {
   width: 100%;
   height: 100%;
@@ -349,7 +359,7 @@ body {
   align-items: center;
   justify-content: center;
   font-weight: 700;
-  font-size: 18px;
+  font-size: 16px; /* era 18px */
   color: #fff;
   box-shadow: 0 4px 16px rgba(59,130,246,.5);
   transition: all 0.2s;
@@ -370,11 +380,11 @@ body {
   top: 100%;
   left: 50%;
   transform: translateX(-50%);
-  margin-top: 4px;
+  margin-top: 2px; /* era 4px */
   background: rgba(0,0,0,.9);
-  padding: 3px 8px;
+  padding: 2px 6px; /* era 3px 8px */
   border-radius: 4px;
-  font-size: 11px;
+  font-size: 10px; /* era 11px */
   font-weight: 600;
   white-space: nowrap;
   pointer-events: none;
