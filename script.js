@@ -612,3 +612,79 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 });
+
+// === MENU DO JOGADOR NO CAMPO ===
+function abrirMenuJogador(jogadorEl, e) {
+  e.stopPropagation();
+  e.preventDefault();
+  
+  // Remove menu antigo
+  const menuVelho = document.getElementById('menu-jogador-popup');
+  if (menuVelho) menuVelho.remove();
+  
+  const playerId = jogadorEl.dataset.id;
+  const playerName = jogadorEl.querySelector('.player-name')?.textContent || 'Jogador';
+  
+  // Cria balão
+  const menu = document.createElement('div');
+  menu.id = 'menu-jogador-popup';
+  menu.innerHTML = `
+    <div class="menu-titulo">${playerName}</div>
+    <button onclick="moverJogadorPara('${playerId}', 'bench')">📋 Enviar para Banco</button>
+    <button onclick="moverJogadorPara('${playerId}', 'ausentes')">❌ Marcar Ausente</button>
+  `;
+  
+  document.body.appendChild(menu);
+  
+  // Posiciona sem sumir no canto
+  const rect = jogadorEl.getBoundingClientRect();
+  const menuWidth = 220;
+  const menuHeight = 110;
+  
+  let left = rect.left + window.scrollX + rect.width/2 - menuWidth/2;
+  let top = rect.top + window.scrollY - menuHeight - 10;
+  
+  // Ajustes pra não vazar
+  if (left + menuWidth > window.innerWidth) left = window.innerWidth - menuWidth - 10;
+  if (top < 10) top = rect.bottom + window.scrollY + 10;
+  if (left < 10) left = 10;
+  
+  menu.style.left = left + 'px';
+  menu.style.top = top + 'px';
+  
+  // Fecha ao clicar fora
+  setTimeout(() => {
+    document.addEventListener('click', fecharMenuJogador, { once: true });
+  }, 10);
+}
+
+function fecharMenuJogador() {
+  const menu = document.getElementById('menu-jogador-popup');
+  if (menu) menu.remove();
+}
+
+function moverJogadorPara(playerId, destino) {
+  const jogador = players.find(p => p.id === playerId);
+  if (!jogador) return;
+  
+  jogador.position = destino; // 'bench' ou 'ausentes'
+  jogador.location = destino;
+  
+  fecharMenuJogador();
+  render(); // sua função que redesenha tudo
+  saveData(); // sua função que salva no localStorage
+}
+
+// Adiciona o click nos jogadores do campo
+function adicionarClickNosJogadores() {
+  document.querySelectorAll('#field-players .player').forEach(el => {
+    el.onclick = (e) => abrirMenuJogador(el, e);
+  });
+}
+
+// Chama depois de renderizar o campo
+const renderOriginal = render;
+render = function() {
+  renderOriginal.apply(this, arguments);
+  setTimeout(adicionarClickNosJogadores, 50);
+}
