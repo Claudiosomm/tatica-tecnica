@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Tática FC</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- LOGIN -->
+  <div id="login-screen" class="pin-screen">
+    <div class="pin-container">
+      <div class="pin-header">
+        <div class="pin-icon">🔒</div>
+        <h2>Tática FC</h2>
+        <p>Digite sua senha</p>
+      </div>
+      <div class="pin-dots" id="login-dots"></div>
+      <div class="pin-msg" id="login-msg"></div>
+      <div class="pin-keypad">
+        <button onclick="loginPress('1')">1</button>
+        <button onclick="loginPress('2')">2</button>
+        <button onclick="loginPress('3')">3</button>
+        <button onclick="loginPress('4')">4</button>
+        <button onclick="loginPress('5')">5</button>
+        <button onclick="loginPress('6')">6</button>
+        <button onclick="loginPress('7')">7</button>
+        <button onclick="loginPress('8')">8</button>
+        <button onclick="loginPress('9')">9</button>
+        <button onclick="openChangePassword()">⚙️</button>
+        <button onclick="loginPress('0')">0</button>
+        <button onclick="loginDel()">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TROCAR SENHA -->
+  <div id="change-screen" class="pin-screen hidden">
+    <div class="pin-container">
+      <div class="pin-header">
+        <div class="pin-icon" id="change-icon">🔐</div>
+        <h2>Alterar Senha</h2>
+        <p id="change-subtitle">Digite a senha mestre</p>
+      </div>
+      <div class="pin-dots" id="change-dots"></div>
+      <div class="pin-msg" id="change-msg"></div>
+      <div class="pin-keypad">
+        <button onclick="changePress('1')">1</button>
+        <button onclick="changePress('2')">2</button>
+        <button onclick="changePress('3')">3</button>
+        <button onclick="changePress('4')">4</button>
+        <button onclick="changePress('5')">5</button>
+        <button onclick="changePress('6')">6</button>
+        <button onclick="changePress('7')">7</button>
+        <button onclick="changePress('8')">8</button>
+        <button onclick="changePress('9')">9</button>
+        <button onclick="closeChangePassword()">✕</button>
+        <button onclick="changePress('0')">0</button>
+        <button onclick="changeDel()">⌫</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- APP -->
+  <div class="app hidden">
+    <header class="app-header">
+  <div style="display:flex;align-items:center;gap:12px">
+    <button onclick="window.location='index.html'" style="padding:8px 12px;border-radius:8px;border:1px solid rgba(255,255,255,.2);background:rgba(255,255,255,.05);color:#f1f5f9;font-size:13px;font-weight:600;cursor:pointer">← Times</button>
+    <h1>Tática FC</h1>
+  </div>
+  <select id="formation-select" onchange="changeFormation()">
+    <option value="4-4-2">4-4-2</option>
+    <option value="4-3-3">4-3-3</option>
+    <option value="4-2-3-1">4-2-3-1</option>
+    <option value="4-5-1">4-5-1</option>
+    <option value="3-5-2">3-5-2</option>
+    <option value="3-4-3">3-4-3</option>
+    <option value="5-3-2">5-3-2</option>
+    <option value="5-4-1">5-4-1</option>
+    <option value="4-1-4-1">4-1-4-1</option>
+    <option value="4-3-2-1">4-3-2-1</option>
+  </select>
+</header>
+
+    <!-- EDITOR DE NOME -->
+    <div class="name-editor" id="name-editor">
+      <input type="text" id="edit-name-input" placeholder="Selecione um jogador no campo" disabled>
+      <button onclick="savePlayerName()" id="save-name-btn" disabled>Salvar</button>
+    </div>
+
+    <div id="pitch-container"
+         ondragover="allowDrop(event)"
+         ondragleave="dragLeave(event)"
+         ondrop="dropNoCampo(event)">
+      <div class="pitch-lines">
+        <div class="grass-pattern"></div>
+        <div class="center-circle"></div>
+        <div class="penalty-area top"></div>
+        <div class="penalty-area bottom"></div>
+        <div class="goal-area top"></div>
+        <div class="goal-area bottom"></div>
+        <div class="halfway-line"></div>
+      </div>
+      <div id="field-players"></div>
+    </div>
+
+    <!-- ADICIONAR JOGADOR -->
+    <div class="add-player-bar">
+  <input type="number" id="new-player-number" placeholder="Nº" 
+         min="1" max="99" class="input-number">
+  <input type="text" id="new-player-input" placeholder="Nome do jogador..." 
+         autocomplete="off" autocorrect="off" spellcheck="false">
+  <button onclick="addPlayer()">+ Adicionar</button>
+</div>
+
+    <!-- BANCO DE RESERVAS -->
+    <div class="section">
+      <h3>Banco de Reservas</h3>
+      <div id="bench-list" class="player-list"
+           ondragover="allowDrop(event)" 
+           ondragleave="dragLeave(event)" 
+           ondrop="dropToBench(event)">
+      </div>
+    </div>
+
+    <!-- AUSENTES -->
+    <div class="section ausentes">
+      <h3>Ausentes</h3>
+      <div id="ausentes-list" class="player-list"
+           ondragover="allowDrop(event)" 
+           ondragleave="dragLeave(event)" 
+           ondrop="dropToAusentes(event)">
+      </div>
+    </div>
+  </div>
+
+  <script src="script.js"></script>
+  </div> <!-- fecha.app -->
+</body>
+</html>
