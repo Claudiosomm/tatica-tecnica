@@ -930,3 +930,50 @@ body {
   font-size: 14px;
   cursor: pointer;
 }
+
+#menu-jogador-popup {
+  position: fixed;
+  background: rgba(15,23,42,0.98);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(59,130,246,0.4);
+  border-radius: 14px;
+  padding: 8px;
+  z-index: 99999;
+  box-shadow: 0 12px 40px rgba(0,0,0,0.7);
+  animation: menuSlide 0.15s ease;
+  min-width: 200px;
+}
+
+@keyframes menuSlide {
+  from { opacity: 0; transform: translateY(-8px) scale(0.95); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+#menu-jogador-popup .menu-titulo {
+  padding: 8px 12px 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgba(241,245,249,0.6);
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 6px;
+}
+
+#menu-jogador-popup button {
+  display: block;
+  width: 100%;
+  padding: 12px 14px;
+  border: none;
+  background: transparent;
+  color: #f1f5f9;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  transition: all 0.15s;
+}
+
+#menu-jogador-popup button:hover {
+  background: rgba(59,130,246,0.3);
+  transform: translateX(2px);
+}
