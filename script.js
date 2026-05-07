@@ -1,9 +1,44 @@
+// === MULTI-TIME ===
+const urlParams = new URLSearchParams(window.location.search);
+let timeId = urlParams.get('time');
+
+if (!timeId) {
+  timeId = 'time_' + Date.now();
+  history.replaceState(null, '', '?time=' + timeId);
+}
+
+let todosTimes = JSON.parse(localStorage.getItem('todos_times')) || {};
+if (!todosTimes[timeId]) {
+  todosTimes[timeId] = {
+    id: timeId,
+    nome: 'Time ' + (Object.keys(todosTimes).length + 1),
+    jogadores: [],
+    criado: Date.now(),
+    atualizado: Date.now()
+  };
+}
+
+// USA SÓ ESSE ARRAY
+let jogadores = todosTimes[timeId].jogadores;
+let nextId = 1;
+
+function salvar() {
+  todosTimes[timeId].jogadores = jogadores;
+  todosTimes[timeId].atualizado = Date.now();
+  localStorage.setItem('todos_times', JSON.stringify(todosTimes));
+}
+
+// Mostra nome do time no header quando carregar
+window.addEventListener('DOMContentLoaded', () => {
+  document.querySelector('.app-header h1').textContent = todosTimes[timeId].nome;
+});
+// === FIM MULTI-TIME ===
+
 // ── SENHAS ─────────────────────────────────────────────────────────────────
 const SENHA_MESTRE = '130162';
 let senhaAcesso = localStorage.getItem('tatica_senha') || '0905';
 
 // ── STATE ──────────────────────────────────────────────────────────────────
-let players = [], nextId = 1;
 let selectedPlayerId = null;
 let fDragEl = null;
 let fOffX = 0, fOffY = 0;
@@ -27,7 +62,7 @@ function loginPress(digit) {
   if (loginEntry.length === senhaAcesso.length) {
     setTimeout(() => {
       if (loginEntry === senhaAcesso) {
-        document.querySelectorAll('#login-dots .pin-dot').forEach(d => d.classList.add('success'));
+        document.querySelectorAll('#login-dots.pin-dot').forEach(d => d.classList.add('success'));
         document.getElementById('login-msg').textContent = 'Acesso liberado!';
         document.getElementById('login-msg').className = 'pin-msg success';
         setTimeout(() => {
@@ -36,13 +71,13 @@ function loginPress(digit) {
           renderAll();
         }, 500);
       } else {
-        document.querySelectorAll('#login-dots .pin-dot').forEach(d => d.classList.add('error'));
+        document.querySelectorAll('#login-dots.pin-dot').forEach(d => d.classList.add('error'));
         document.getElementById('login-msg').textContent = 'Senha incorreta';
         document.getElementById('login-msg').className = 'pin-msg error';
-        setTimeout(() => { 
-          loginEntry = ''; 
-          renderLoginDots(); 
-          document.getElementById('login-msg').textContent = ''; 
+        setTimeout(() => {
+          loginEntry = '';
+          renderLoginDots();
+          document.getElementById('login-msg').textContent = '';
           document.getElementById('login-msg').className = 'pin-msg';
         }, 900);
       }
@@ -160,9 +195,8 @@ function getFormationPositions(key) {
 function changeFormation() {
   const key = document.getElementById('formation-select').value;
   const positions = getFormationPositions(key);
-  const emCampo = players.filter(p => p.emCampo);
+  const emCampo = jogadores.filter(p => p.emCampo);
 
-  // Só reposiciona quem já tá em campo, mantém os jogadores
   emCampo.forEach((p, i) => {
     if (positions[i]) {
       p.x = positions[i].x;
@@ -170,13 +204,13 @@ function changeFormation() {
     }
   });
 
-  saveData();
+  salvar();
   renderField();
 }
 
 function selectPlayerOnField(playerId) {
   selectedPlayerId = playerId;
-  const player = players.find(p => p.id === playerId);
+  const player = jogadores.find(p => p.id === playerId);
   const input = document.getElementById('edit-name-input');
   const btn = document.getElementById('save-name-btn');
 
@@ -194,11 +228,11 @@ function selectPlayerOnField(playerId) {
 
 function savePlayerName() {
   if (!selectedPlayerId) return;
-  const player = players.find(p => p.id === selectedPlayerId);
+  const player = jogadores.find(p => p.id === selectedPlayerId);
   const newName = document.getElementById('edit-name-input').value.trim();
   if (player && newName) {
     player.name = newName;
-    saveData();
+    salvar();
     renderAll();
     document.getElementById('edit-name-input').value = '';
     document.getElementById('edit-name-input').disabled = true;
@@ -208,45 +242,57 @@ function savePlayerName() {
 }
 
 function togglePlayerStatus(playerId) {
-  const player = players.find(p => p.id === playerId);
+  const player = jogadores.find(p => p.id === playerId);
   if (!player) return;
 
-  // Se tá ausente, volta pro banco
   if (player.status === 'faltou') {
     player.status = 'indefinido';
     player.emCampo = false;
     player.x = null;
     player.y = null;
-  } 
-  // Se tá no banco ou em campo, marca como ausente
-  else {
+  } else {
     player.status = 'faltou';
     player.emCampo = false;
     player.x = null;
     player.y = null;
   }
 
-  saveData();
+  salvar();
   renderAll();
 }
 
 function sendToBench(playerId) {
-  const player = players.find(p => p.id === playerId);
+  const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.emCampo = false;
     player.x = null;
     player.y = null;
-    saveData();
+    salvar();
     renderAll();
   }
 }
 
-// Menu de contexto pra campo
+function posicionarMenu(menu, x, y) {
+  const menuW = 170;
+  const menuH = 100;
+  const padding = 10;
+
+  if (x + menuW > window.innerWidth - padding) {
+    x = window.innerWidth - menuW - padding;
+  }
+  if (x < padding) x = padding;
+  if (y + menuH > window.innerHeight - padding) {
+    y = window.innerHeight - menuH - padding;
+  }
+  if (y < padding) y = padding;
+
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+}
+
 function showContextMenu(e, playerId) {
   e.preventDefault();
   e.stopPropagation();
-
-  // Remove menu antigo se tiver
   const oldMenu = document.getElementById('context-menu');
   if (oldMenu) oldMenu.remove();
 
@@ -261,15 +307,12 @@ function showContextMenu(e, playerId) {
     </div>
   `;
 
-  // Posiciona no local do clique
   const x = e.clientX || (e.touches && e.touches[0].clientX);
   const y = e.clientY || (e.touches && e.touches[0].clientY);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
 
   document.body.appendChild(menu);
+  posicionarMenu(menu, x, y);
 
-  // Fecha ao clicar fora
   setTimeout(() => {
     document.addEventListener('click', closeContextMenu, { once: true });
   }, 10);
@@ -279,6 +322,7 @@ function closeContextMenu() {
   const menu = document.getElementById('context-menu');
   if (menu) menu.remove();
 }
+
 // ── DRAG & DROP ────────────────────────────────────────────────────────────
 function allowDrop(ev) {
   ev.preventDefault();
@@ -294,11 +338,11 @@ function dropNoCampo(ev) {
   ev.currentTarget.classList.remove('drag-over');
 
   const id = parseInt(ev.dataTransfer.getData("text/plain"));
-  const player = players.find(p => p.id === id);
+  const player = jogadores.find(p => p.id === id);
 
   if (!player || player.emCampo || player.status === 'faltou') return;
 
-  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou').length;
+  const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou').length;
   if (emCampo >= 11) {
     alert('Máximo de 11 jogadores em campo!');
     return;
@@ -317,7 +361,7 @@ function dropNoCampo(ev) {
   player.y = Math.max(5, Math.min(95, y));
   player.emCampo = true;
 
-  saveData();
+  salvar();
   renderAll();
 }
 
@@ -327,13 +371,13 @@ function dropToBench(ev) {
   ev.currentTarget.classList.remove('drag-over');
 
   const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
-  const player = players.find(p => p.id === playerId);
+  const player = jogadores.find(p => p.id === playerId);
 
   if (player) {
     player.emCampo = false;
     player.x = null;
     player.y = null;
-    saveData();
+    salvar();
     renderAll();
   }
 }
@@ -343,14 +387,14 @@ function dropToAusentes(ev) {
   ev.currentTarget.classList.remove('drag-over');
 
   const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
-  const player = players.find(p => p.id === playerId);
+  const player = jogadores.find(p => p.id === playerId);
 
   if (player) {
     player.emCampo = false;
     player.x = null;
     player.y = null;
     player.status = 'faltou';
-    saveData();
+    salvar();
     renderAll();
   }
 }
@@ -372,13 +416,12 @@ function addPlayer() {
     return;
   }
 
-  // Verifica se o número já existe
-  if (players.some(p => p.number === number)) {
+  if (jogadores.some(p => p.number === number)) {
     alert('Já existe um jogador com a camisa ' + number);
     return;
   }
 
-  players.push({
+  jogadores.push({
     id: nextId++,
     name: name,
     number: number,
@@ -390,25 +433,23 @@ function addPlayer() {
 
   inputName.value = '';
   inputNumber.value = '';
-  saveData();
+  salvar();
   renderAll();
   inputName.focus();
 }
 
-// Enter no campo de número pula pro nome
 document.getElementById('new-player-number').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('new-player-input').focus();
 });
 
-// Enter no campo de nome adiciona
 document.getElementById('new-player-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') addPlayer();
 });
 
 function removePlayer(id) {
   if (!confirm('Remover jogador?')) return;
-  players = players.filter(p => p.id!== id);
-  saveData();
+  jogadores = jogadores.filter(p => p.id!== id);
+  salvar();
   renderAll();
 }
 
@@ -425,7 +466,7 @@ function renderField() {
   const fp = document.getElementById('field-players');
   fp.innerHTML = '';
 
-  const emCampo = players.filter(p => p.emCampo && p.status!== 'faltou');
+  const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou');
 
   emCampo.forEach((p, i) => {
     const el = document.createElement('div');
@@ -450,46 +491,29 @@ function renderField() {
     el.ondragend = (e) => {
       el.classList.remove('is-dragging');
     };
-    
-    el.ondragstart = (e) => {
-  e.dataTransfer.setData('text/plain', String(p.id));
-  e.dataTransfer.effectAllowed = 'move';
-  e.dataTransfer.setDragImage(el, 25, 25);
-  el.classList.add('is-dragging');
-};
-el.ondragend = (e) => {
-  el.classList.remove('is-dragging');
-};
 
-// Clique simples: edita nome
-el.onclick = (e) => {
-  e.stopPropagation();
-  selectPlayerOnField(p.id);
-};
+    el.onclick = (e) => {
+      e.stopPropagation();
+      selectPlayerOnField(p.id);
+    };
 
-// Clique direito: menu
-el.oncontextmenu = (e) => {
-  showContextMenu(e, p.id);
-};
+    el.oncontextmenu = (e) => {
+      showContextMenu(e, p.id);
+    };
 
-// Long press no celular: menu
-let pressTimer;
-el.ontouchstart = (e) => {
-  pressTimer = setTimeout(() => {
-    showContextMenu(e, p.id);
-  }, 500); // 500ms segura = menu
-};
-el.ontouchend = () => {
-  clearTimeout(pressTimer);
-};
-el.ontouchmove = () => {
-  clearTimeout(pressTimer); // Cancela se arrastar
-};
+    let pressTimer;
+    el.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => {
+        showContextMenu(e, p.id);
+      }, 500);
+    };
+    el.ontouchend = () => clearTimeout(pressTimer);
+    el.ontouchmove = () => clearTimeout(pressTimer);
 
-  el.innerHTML = `
-  <div class="field-dot">${p.number || i + 1}</div>
-  <div class="field-name">${esc(p.name)}</div>
-`;
+    el.innerHTML = `
+      <div class="field-dot">${p.number || i + 1}</div>
+      <div class="field-name">${esc(p.name)}</div>
+    `;
 
     attachFieldDrag(el);
     fp.appendChild(el);
@@ -500,101 +524,82 @@ el.ontouchmove = () => {
   }
 }
 
+function renderBench() {
+  const bench = document.getElementById('bench-list');
+  if (!bench) return;
+
+  const banco = jogadores.filter(p =>!p.emCampo && p.status!== 'faltou');
+
+  bench.innerHTML = banco.length? banco.map(p => `
+    <div class="bench-chip" draggable="true" data-id="${p.id}"
+         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
+      <span class="status-btn indefinido"></span>
+      ${p.number? '#' + p.number + ' ' : ''}${esc(p.name)}
+      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
+    </div>
+  `).join('') : '<span class="bench-empty">Banco vazio</span>';
+
+  document.querySelectorAll('#bench-list.bench-chip').forEach(el => {
+    const playerId = parseInt(el.dataset.id);
+    el.oncontextmenu = (e) => showContextMenuBench(e, playerId);
+    let pressTimer;
+    el.ontouchstart = (e) => {
+      pressTimer = setTimeout(() => showContextMenuBench(e, playerId), 500);
+    };
+    el.ontouchend = () => clearTimeout(pressTimer);
+    el.ontouchmove = () => clearTimeout(pressTimer);
+  });
+}
+
 function renderAusentes() {
   const ausentes = document.getElementById('ausentes-list');
-  const faltaram = players.filter(p => p.status === 'faltou');
+  const faltaram = jogadores.filter(p => p.status === 'faltou');
 
-  ausentes.innerHTML = faltaram.length ? faltaram.map(p => `
+  ausentes.innerHTML = faltaram.length? faltaram.map(p => `
     <div class="bench-chip ausente" draggable="true" data-id="${p.id}"
          ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move';">
       <span class="status-btn faltou"></span>
-     <span class="player-name">${p.number ? `#${p.number} ` : ''}${esc(p.name)}</span>
-
+      <span class="player-name">${p.number? '#' + p.number + ' ' : ''}${esc(p.name)}</span>
       <button class="btn-action" onclick="voltarProBanco(${p.id})">Banco</button>
       <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
     </div>
   `).join('') : '<span class="bench-empty">Todos presentes</span>';
 }
 
+function showContextMenuBench(e, playerId) {
+  e.preventDefault();
+  e.stopPropagation();
+  const oldMenu = document.getElementById('context-menu');
+  if (oldMenu) oldMenu.remove();
+
+  const menu = document.createElement('div');
+  menu.id = 'context-menu';
+  menu.innerHTML = `
+    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">
+      ❌ Marcar ausente
+    </div>
+  `;
+
+  const x = e.clientX || (e.touches && e.touches[0].clientX);
+  const y = e.clientY || (e.touches && e.touches[0].clientY);
+  menu.style.left = x + 'px';
+  menu.style.top = y + 'px';
+  document.body.appendChild(menu);
+  setTimeout(() => {
+    document.addEventListener('click', closeContextMenu, { once: true });
+  }, 10);
+}
+
 function voltarProBanco(playerId) {
-  const player = players.find(p => p.id === playerId);
+  const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.status = 'indefinido';
     player.emCampo = false;
     player.x = null;
     player.y = null;
-    saveData();
+    salvar();
     renderAll();
   }
-}
-
-// Menu específico pra ausentes: só tem "Enviar pro banco"
-function showContextMenuAusente(e, playerId) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const oldMenu = document.getElementById('context-menu');
-  if (oldMenu) oldMenu.remove();
-
-  const menu = document.createElement('div');
-  menu.id = 'context-menu';
-  menu.innerHTML = `
-    <div class="context-item" onclick="voltarProBanco(${playerId}); closeContextMenu();">
-      📤 Enviar pro banco
-    </div>
-  `;
-
-  const x = e.clientX || (e.touches && e.touches[0].clientX);
-  const y = e.clientY || (e.touches && e.touches[0].clientY);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-
-  document.body.appendChild(menu);
-
-  setTimeout(() => {
-    document.addEventListener('click', closeContextMenu, { once: true });
-  }, 10);
-}
-
-// Função nova: tira o status de ausente e volta pro banco
-function voltarProBanco(playerId) {
-  const player = players.find(p => p.id === playerId);
-  if (player) {
-    player.status = 'indefinido'; // sai de 'faltou'
-    player.emCampo = false;
-    player.x = null;
-    player.y = null;
-    saveData();
-    renderAll();
-  }
-}
-
-// Menu específico pra ausentes
-function showContextMenuAusente(e, playerId) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const oldMenu = document.getElementById('context-menu');
-  if (oldMenu) oldMenu.remove();
-
-  const menu = document.createElement('div');
-  menu.id = 'context-menu';
-  menu.innerHTML = `
-    <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">
-      📤 Enviar pro banco
-    </div>
-  `;
-
-  const x = e.clientX || (e.touches && e.touches[0].clientX);
-  const y = e.clientY || (e.touches && e.touches[0].clientY);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-
-  document.body.appendChild(menu);
-
-  setTimeout(() => {
-    document.addEventListener('click', closeContextMenu, { once: true });
-  }, 10);
 }
 
 // ── FIELD DRAG LIVRE ───────────────────────────────────────────────────────
@@ -632,17 +637,16 @@ function attachFieldDrag(el) {
 
 function saveFieldPosition(el) {
   const id = parseInt(el.dataset.id);
-  const player = players.find(p => p.id === id);
+  const player = jogadores.find(p => p.id === id);
   if (player) {
     player.x = parseFloat(el.style.left);
     player.y = parseFloat(el.style.top);
-    saveData();
+    salvar();
   }
 }
 
 document.addEventListener('mousemove', e => {
   if (!fDragEl) return;
-
   const moved = Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3;
   if (moved) fDragEl.dataset.moved = 'true';
 
@@ -661,7 +665,6 @@ document.addEventListener('mousemove', e => {
 
 document.addEventListener('touchmove', e => {
   if (!fDragEl) return;
-
   const t = e.touches[0];
   const moved = Math.abs(t.clientX - startX) > 3 || Math.abs(t.clientY - startY) > 3;
   if (moved) fDragEl.dataset.moved = 'true';
@@ -708,18 +711,8 @@ document.addEventListener('touchend', e => {
   }
 });
 
-// ── SAVE / LOAD ────────────────────────────────────────────────────────────
-function saveData() {
-  try {
-    localStorage.setItem('tatica_players', JSON.stringify(players));
-    localStorage.setItem('tatica_nextId', String(nextId));
-    localStorage.setItem('tatica_formation', document.getElementById('formation-select').value);
-  } catch(e) {}
-}
-
 // ── INIT ──────────────────────────────────────────────────────────────────
 try {
-  const sp = localStorage.getItem('tatica_players'); if (sp) players = JSON.parse(sp);
   const si = localStorage.getItem('tatica_nextId'); if (si) nextId = parseInt(si);
   const sf = localStorage.getItem('tatica_formation'); if (sf) document.getElementById('formation-select').value = sf;
 } catch(e) {}
@@ -728,133 +721,11 @@ document.getElementById('formation-select').addEventListener('change', () => {
   changeFormation();
 });
 
-function renderBench() {
-  const bench = document.getElementById('bench-list');
-  if (!bench) return; // caso não exista o elemento no HTML
-
-  const banco = players.filter(p =>!p.emCampo && p.status!== 'faltou');
-
-  bench.innerHTML = banco.length? banco.map(p => `
-    <div class="bench-chip" draggable="true" data-id="${p.id}"
-         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}'); event.dataTransfer.effectAllowed = 'move'; event.dataTransfer.setDragImage(event.target, 10, 10);">
-      <span class="status-btn indefinido"></span>
-      ${esc(p.name)}
-      <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
-    </div>
-  `).join('') : '<span class="bench-empty">Banco vazio</span>';
-
-  // Adiciona menu de contexto no banco também
-  document.querySelectorAll('#bench-list.bench-chip').forEach(el => {
-    const playerId = parseInt(el.dataset.id);
-
-    el.oncontextmenu = (e) => {
-      showContextMenuBench(e, playerId);
-    };
-
-    let pressTimer;
-    el.ontouchstart = (e) => {
-      pressTimer = setTimeout(() => {
-        showContextMenuBench(e, playerId);
-      }, 500);
-    };
-    el.ontouchend = () => clearTimeout(pressTimer);
-    el.ontouchmove = () => clearTimeout(pressTimer);
-  });
-}
-
-function showContextMenuBench(e, playerId) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  const oldMenu = document.getElementById('context-menu');
-  if (oldMenu) oldMenu.remove();
-
-  const menu = document.createElement('div');
-  menu.id = 'context-menu';
-  menu.innerHTML = `
-    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">
-      ❌ Marcar ausente
-    </div>
-  `;
-
-  const x = e.clientX || (e.touches && e.touches[0].clientX);
-  const y = e.clientY || (e.touches && e.touches[0].clientY);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-
-  document.body.appendChild(menu);
-
-  setTimeout(() => {
-    document.addEventListener('click', closeContextMenu, { once: true });
-  }, 10);
-}
-
-// ── MENU DE CONTEXTO AUSENTES ──────────────────────────────────────────────
-function showContextMenuAusente(e, playerId) {
-  e.preventDefault();
-  e.stopPropagation();
-
-  document.getElementById('context-menu')?.remove();
-
-  const menu = document.createElement('div');
-  menu.id = 'context-menu';
-  menu.innerHTML = `
-    <div class="context-item" onclick="voltarProBanco(${playerId}); closeContextMenu();">
-      📤 Enviar pro banco
-    </div>
-  `;
-
-  const x = e.clientX || (e.touches && e.touches[0].clientX) || 0;
-  const y = e.clientY || (e.touches && e.touches[0].clientY) || 0;
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
-
-  document.body.appendChild(menu);
-
-  setTimeout(() => {
-    document.addEventListener('click', closeContextMenu, { once: true });
-  }, 10);
-}
-
-function voltarProBanco(playerId) {
-  const player = players.find(p => p.id === playerId);
-  if (player) {
-    player.status = 'indefinido';
-    player.emCampo = false;
-    player.x = null;
-    player.y = null;
-    saveData();
-    renderAll();
-  }
-}
-
-function updateStats() {
-  const total = players.length;
-  const emCampo = players.filter(p => p.emCampo).length;
-  const banco = players.filter(p => !p.emCampo && p.status !== 'faltou').length;
-  const ausentes = players.filter(p => p.status === 'faltou').length;
-  
-  document.getElementById('total-jogadores').textContent = total;
-  document.getElementById('em-campo-count').textContent = emCampo;
-  document.getElementById('banco-count').textContent = banco;
-  document.getElementById('ausentes-count').textContent = ausentes;
-}
-
-// Chama essa função no final de renderAll()
-function renderAll() {
-  renderField();
-  renderBench();
-  renderAusentes();
-  updateStats(); // ADICIONA ESSA LINHA
-}
-
 window.onload = function() {
   document.getElementById('login-screen').classList.remove('hidden');
   document.querySelector('.app').classList.add('hidden');
-  renderLoginDots(); // cria as 4 bolinhas vazias
-  loadPlayers();
+  renderLoginDots();
   renderAll();
 };
 
 renderLoginDots();
-renderAll();
