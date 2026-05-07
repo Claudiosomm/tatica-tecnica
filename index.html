@@ -2,135 +2,278 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Tática FC</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Meus Times</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+      padding: 20px 16px;
+    }
+
+   .container {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+   .header {
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+   .header h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 8px;
+      background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+   .header p {
+      color: rgba(241,245,249,.6);
+      font-size: 14px;
+    }
+
+   .novo-time {
+      width: 100%;
+      padding: 18px;
+      border-radius: 16px;
+      border: 2px dashed rgba(59,130,246,.5);
+      background: rgba(59,130,246,.1);
+      backdrop-filter: blur(12px);
+      color: #3b82f6;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-bottom: 24px;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+
+   .novo-time:hover {
+      background: rgba(59,130,246,.2);
+      border-color: #3b82f6;
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(59,130,246,0.3);
+    }
+
+   .novo-time:active {
+      transform: scale(.98);
+    }
+
+   .empty {
+      text-align: center;
+      padding: 60px 20px;
+      color: rgba(241,245,249,.4);
+      font-size: 15px;
+    }
+
+   .time-card {
+      background: rgba(30,41,59,0.7);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,.1);
+      border-radius: 16px;
+      padding: 18px;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+   .time-card:hover {
+      background: rgba(51,65,85,0.9);
+      border-color: rgba(59,130,246,.5);
+      transform: translateY(-2px);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+
+   .time-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+   .time-info h3 {
+      font-size: 17px;
+      font-weight: 700;
+      margin-bottom: 6px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+   .time-meta {
+      display: flex;
+      gap: 12px;
+      font-size: 12px;
+      color: rgba(241,245,249,.5);
+    }
+
+   .time-meta span {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+   .time-actions {
+      display: flex;
+      gap: 8px;
+      flex-shrink: 0;
+    }
+
+   .btn {
+      padding: 8px 14px;
+      border-radius: 10px;
+      border: none;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+
+   .btn-edit {
+      background: rgba(59,130,246,.2);
+      color: #3b82f6;
+      border: 1px solid rgba(59,130,246,.3);
+    }
+
+   .btn-edit:hover {
+      background: #3b82f6;
+      color: #fff;
+    }
+
+   .btn-delete {
+      background: rgba(239,68,68,.15);
+      color: #ef4444;
+      border: 1px solid rgba(239,68,68,.3);
+    }
+
+   .btn-delete:hover {
+      background: #ef4444;
+      color: #fff;
+    }
+
+   .btn:active {
+      transform: scale(.95);
+    }
+
+    @media (max-width: 480px) {
+     .time-card {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
+      }
+     .time-actions {
+        width: 100%;
+      }
+     .btn {
+        flex: 1;
+      }
+    }
+  </style>
 </head>
 <body>
-  <!-- LOGIN -->
-  <div id="login-screen" class="pin-screen">
-    <div class="pin-container">
-      <div class="pin-header">
-        <div class="pin-icon">🔒</div>
-        <h2>Tática FC</h2>
-        <p>Digite sua senha</p>
-      </div>
-      <div class="pin-dots" id="login-dots"></div>
-      <div class="pin-msg" id="login-msg"></div>
-      <div class="pin-keypad">
-        <button onclick="loginPress('1')">1</button>
-        <button onclick="loginPress('2')">2</button>
-        <button onclick="loginPress('3')">3</button>
-        <button onclick="loginPress('4')">4</button>
-        <button onclick="loginPress('5')">5</button>
-        <button onclick="loginPress('6')">6</button>
-        <button onclick="loginPress('7')">7</button>
-        <button onclick="loginPress('8')">8</button>
-        <button onclick="loginPress('9')">9</button>
-        <button onclick="openChangePassword()">⚙️</button>
-        <button onclick="loginPress('0')">0</button>
-        <button onclick="loginDel()">⌫</button>
-      </div>
+  <div class="container">
+    <div class="header">
+      <h1>⚽ Meus Times</h1>
+      <p>Gerencie suas formações táticas</p>
     </div>
+
+    <button class="novo-time" onclick="novoTime()">
+      <span style="font-size:20px">+</span>
+      Criar Novo Time
+    </button>
+
+    <div id="lista-times"></div>
   </div>
 
-  <!-- TROCAR SENHA -->
-  <div id="change-screen" class="pin-screen hidden">
-    <div class="pin-container">
-      <div class="pin-header">
-        <div class="pin-icon" id="change-icon">🔐</div>
-        <h2>Alterar Senha</h2>
-        <p id="change-subtitle">Digite a senha mestre</p>
-      </div>
-      <div class="pin-dots" id="change-dots"></div>
-      <div class="pin-msg" id="change-msg"></div>
-      <div class="pin-keypad">
-        <button onclick="changePress('1')">1</button>
-        <button onclick="changePress('2')">2</button>
-        <button onclick="changePress('3')">3</button>
-        <button onclick="changePress('4')">4</button>
-        <button onclick="changePress('5')">5</button>
-        <button onclick="changePress('6')">6</button>
-        <button onclick="changePress('7')">7</button>
-        <button onclick="changePress('8')">8</button>
-        <button onclick="changePress('9')">9</button>
-        <button onclick="closeChangePassword()">✕</button>
-        <button onclick="changePress('0')">0</button>
-        <button onclick="changeDel()">⌫</button>
-      </div>
-    </div>
-  </div>
+  <script>
+    let times = JSON.parse(localStorage.getItem('todos_times')) || {};
 
-  <!-- APP -->
-  <div class="app hidden"></div>
-    <header class="app-header">
-      <h1>Tática FC</h1>
-      <select id="formation-select" onchange="changeFormation()">
-        <option value="4-4-2">4-4-2</option>
-        <option value="4-3-3">4-3-3</option>
-        <option value="4-2-3-1">4-2-3-1</option>
-        <option value="4-5-1">4-5-1</option>
-        <option value="3-5-2">3-5-2</option>
-        <option value="3-4-3">3-4-3</option>
-        <option value="5-3-2">5-3-2</option>
-        <option value="5-4-1">5-4-1</option>
-        <option value="4-1-4-1">4-1-4-1</option>
-        <option value="4-3-2-1">4-3-2-1</option>
-      </select>
-    </header>
+    function renderTimes() {
+      const lista = Object.values(times).sort((a,b) => b.atualizado - a.atualizado);
+      const container = document.getElementById('lista-times');
 
-    <!-- EDITOR DE NOME -->
-    <div class="name-editor" id="name-editor">
-      <input type="text" id="edit-name-input" placeholder="Selecione um jogador no campo" disabled>
-      <button onclick="savePlayerName()" id="save-name-btn" disabled>Salvar</button>
-    </div>
+      if (lista.length === 0) {
+        container.innerHTML = '<div class="empty">Nenhum time criado ainda.<br>Clique acima para começar.</div>';
+        return;
+      }
 
-    <div id="pitch-container"
-         ondragover="allowDrop(event)"
-         ondragleave="dragLeave(event)"
-         ondrop="dropNoCampo(event)">
-      <div class="pitch-lines">
-        <div class="grass-pattern"></div>
-        <div class="center-circle"></div>
-        <div class="penalty-area top"></div>
-        <div class="penalty-area bottom"></div>
-        <div class="goal-area top"></div>
-        <div class="goal-area bottom"></div>
-        <div class="halfway-line"></div>
-      </div>
-      <div id="field-players"></div>
-    </div>
+      container.innerHTML = lista.map(t => {
+        const data = new Date(t.atualizado).toLocaleDateString('pt-BR', {
+          day: '2-digit',
+          month: 'short'
+        });
+        return `
+          <div class="time-card" onclick="abrirTime('${t.id}')">
+            <div class="time-info">
+              <h3>${t.nome}</h3>
+              <div class="time-meta">
+                <span>👥 ${t.jogadores.length} jogadores</span>
+                <span>📅 ${data}</span>
+              </div>
+            </div>
+            <div class="time-actions" onclick="event.stopPropagation()">
+              <button class="btn btn-edit" onclick="renomear('${t.id}')">Renomear</button>
+              <button class="btn btn-delete" onclick="deletar('${t.id}')">Excluir</button>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
 
-    <!-- ADICIONAR JOGADOR -->
-    <div class="add-player-bar">
-  <input type="number" id="new-player-number" placeholder="Nº" 
-         min="1" max="99" class="input-number">
-  <input type="text" id="new-player-input" placeholder="Nome do jogador..." 
-         autocomplete="off" autocorrect="off" spellcheck="false">
-  <button onclick="addPlayer()">+ Adicionar</button>
-</div>
+    function novoTime() {
+      window.open('tatica.html', '_blank');
+    }
 
-    <!-- BANCO DE RESERVAS -->
-    <div class="section">
-      <h3>Banco de Reservas</h3>
-      <div id="bench-list" class="player-list"
-           ondragover="allowDrop(event)" 
-           ondragleave="dragLeave(event)" 
-           ondrop="dropToBench(event)">
-      </div>
-    </div>
+    function abrirTime(id) {
+      window.open('tatica.html?time=' + id, '_blank');
+    }
 
-    <!-- AUSENTES -->
-    <div class="section ausentes">
-      <h3>Ausentes</h3>
-      <div id="ausentes-list" class="player-list"
-           ondragover="allowDrop(event)" 
-           ondragleave="dragLeave(event)" 
-           ondrop="dropToAusentes(event)">
-      </div>
-    </div>
-  </div>
+    function renomear(id) {
+      const novo = prompt('Novo nome do time:', times[id].nome);
+      if (novo && novo.trim()) {
+        times[id].nome = novo.trim();
+        times[id].atualizado = Date.now();
+        localStorage.setItem('todos_times', JSON.stringify(times));
+        renderTimes();
+      }
+    }
 
-  <script src="script.js"></script>
+    function deletar(id) {
+      if (confirm('Deletar "' + times[id].nome + '"? Essa ação não pode ser desfeita.')) {
+        delete times[id];
+        localStorage.setItem('todos_times', JSON.stringify(times));
+        renderTimes();
+      }
+    }
+
+    // Renderiza ao abrir
+    renderTimes();
+
+    // Atualiza quando volta pra aba
+    window.addEventListener('focus', () => {
+      times = JSON.parse(localStorage.getItem('todos_times')) || {};
+      renderTimes();
+    });
+  </script>
 </body>
 </html>
