@@ -650,45 +650,66 @@ function dropToAusentes(ev) {
 
 function attachFieldDrag(el) {
   el.dataset.moved = 'false';
-  el.addEventListener('mousedown', e => {
-    if (e.button!== 0) return;
+
+  const startDrag = (e) => {
+    // Botão direito do mouse ignora
+    if (e.button && e.button!== 0) return;
+
+    // Pega posição: touch ou mouse
+    const point = e.touches? e.touches[0] : e;
+
     e.preventDefault();
     e.stopPropagation();
+
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
+
     const r = document.getElementById('pitch-container').getBoundingClientRect();
-    startX = e.clientX;
-    startY = e.clientY;
-    fOffX = e.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
-    fOffY = e.clientY - r.top - parseFloat(fDragEl.style.top)/100 * r.height;
-  });
+    startX = point.clientX;
+    startY = point.clientY;
+    fOffX = point.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
+    fOffY = point.clientY - r.top - parseFloat(fDragEl.style.top)/100 * r.height;
+  };
+
+  // Mouse
+  el.addEventListener('mousedown', startDrag);
+
+  // Touch - Mobile
+  el.addEventListener('touchstart', startDrag, { passive: false });
 }
 
-document.addEventListener('mousemove', e => {
+const moveDrag = (e) => {
   if (!fDragEl) return;
-  const moved = Math.abs(e.clientX - startX) > 3 || Math.abs(e.clientY - startY) > 3;
+
+  const point = e.touches? e.touches[0] : e;
+  const moved = Math.abs(point.clientX - startX) > 3 || Math.abs(point.clientY - startY) > 3;
   if (moved) fDragEl.dataset.moved = 'true';
+
   const pitch = document.getElementById('pitch-container');
   if (!pitch) return;
   const r = pitch.getBoundingClientRect();
-  const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+  const inside = point.clientX >= r.left && point.clientX <= r.right && point.clientY >= r.top && point.clientY <= r.bottom;
+
   if (inside) {
     e.preventDefault();
-    const x = ((e.clientX - r.left - fOffX) / r.width) * 100;
-    const y = ((e.clientY - r.top - fOffY) / r.height) * 100;
+    const x = ((point.clientX - r.left - fOffX) / r.width) * 100;
+    const y = ((point.clientY - r.top - fOffY) / r.height) * 100;
     fDragEl.style.left = Math.max(5, Math.min(95, x)) + '%';
     fDragEl.style.top = Math.max(5, Math.min(95, y)) + '%';
   }
-});
+};
 
-document.addEventListener('mouseup', e => {
+const endDrag = (e) => {
   if (fDragEl) {
     fDragEl.classList.remove('is-dragging');
+
     if (fDragEl.dataset.moved === 'true') {
       const pitch = document.getElementById('pitch-container');
       if (pitch) {
+        const point = e.changedTouches? e.changedTouches[0] : e;
         const r = pitch.getBoundingClientRect();
-        const inside = e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom;
+        const inside = point.clientX >= r.left && point.clientX <= r.right && point.clientY >= r.top && point.clientY <= r.bottom;
+
         if (inside) {
           const id = parseInt(fDragEl.dataset.id);
           const player = jogadores.find(p => p.id === id);
@@ -703,7 +724,15 @@ document.addEventListener('mouseup', e => {
     fDragEl.dataset.moved = 'false';
     fDragEl = null;
   }
-});
+};
+
+// Mouse
+document.addEventListener('mousemove', moveDrag);
+document.addEventListener('mouseup', endDrag);
+
+// Touch - Mobile
+document.addEventListener('touchmove', moveDrag, { passive: false });
+document.addEventListener('touchend', endDrag);
 
 // ===== INIT =====
 window.addEventListener('DOMContentLoaded', () => {
