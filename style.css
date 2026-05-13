@@ -277,9 +277,10 @@ body {
 /* CAMPO - MANTIDO COM MELHORIAS */
 #pitch-container {
   width: 100%;
+  max-width: 400px; /* Limite no celular */
   aspect-ratio: 7/10;
   position: relative;
-  margin: 16px 0;
+  margin: 16px auto; /* Centraliza */
   border-radius: 16px;
   overflow: hidden;
   box-shadow: 0 8px 32px rgba(0,0,0,.5);
@@ -681,22 +682,22 @@ body {
   cursor: pointer;
 }
 
-/* MOBILE - BOLINHAS MENORES */
+/* MOBILE - BOLINHAS MAIORES */
 @media (max-width: 768px) {
   .field-player {
-    width: 38px;
-    height: 38px;
+    width: 44px; /* era 38px */
+    height: 44px;
   }
   
   .field-dot {
-    font-size: 13px;
+    font-size: 15px; /* era 13px */
     border-width: 2px;
   }
   
   .field-name {
-    font-size: 8px;
-    padding: 1px 4px;
-    margin-top: 1px;
+    font-size: 9px; /* era 8px */
+    padding: 2px 5px;
+    margin-top: 2px;
   }
 }
 
