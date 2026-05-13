@@ -354,9 +354,9 @@ function showContextMenu(e, playerId) {
   const menu = document.createElement('div');
   menu.id = 'context-menu';
   menu.innerHTML = `
-    <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">📤 Enviar pro banco</div>
-    <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">❌ Marcar ausente</div>
-    <div class="context-item" onclick="editPlayerName(${playerId}); closeContextMenu();">✏️ Editar nome</div>
+    <div class="context-item" data-action="bench">📤 Enviar pro banco</div>
+    <div class="context-item" data-action="ausente">❌ Marcar ausente</div>
+    <div class="context-item" data-action="edit">✏️ Editar nome</div>
   `;
 
   const point = e.changedTouches? e.changedTouches[0] : e.touches? e.touches[0] : e;
@@ -372,10 +372,34 @@ function showContextMenu(e, playerId) {
   menu.style.left = Math.min(x, maxX) + 'px';
   menu.style.top = Math.min(y, maxY) + 'px';
 
+  // FUNÇÃO QUE RODA AÇÃO
+  const handleAction = (ev) => {
+    ev.stopPropagation();
+    ev.preventDefault();
+    const item = ev.target.closest('.context-item');
+    if (!item) return;
+
+    const action = item.dataset.action;
+
+    if (action === 'bench') sendToBench(playerId);
+    if (action === 'ausente') togglePlayerStatus(playerId);
+    if (action === 'edit') editPlayerName(playerId);
+
+    closeContextMenu();
+  };
+
+  // FUNCIONA MOUSE E TOUCH
+  menu.addEventListener('mousedown', handleAction);
+  menu.addEventListener('touchstart', handleAction, { passive: false });
+
+  // Fecha ao clicar fora
   setTimeout(() => {
-    document.addEventListener('click', closeContextMenu, { once: true });
-    document.addEventListener('touchstart', closeContextMenu, { once: true });
-  }, 10);
+    const closeHandler = (ev) => {
+      if (!menu.contains(ev.target)) closeContextMenu();
+    };
+    document.addEventListener('mousedown', closeHandler, { once: true });
+    document.addEventListener('touchstart', closeHandler, { once: true });
+  }, 0);
 }
 
 function closeContextMenu() {
@@ -544,7 +568,18 @@ document.addEventListener('mouseup', endDrag);
 document.addEventListener('touchmove', moveDrag, { passive: false });
 document.addEventListener('touchend', endDrag);
 
-// ===== INIT ÚNICO - APAGA OS BLOCOS SOLTOS ABAIXO DISSO =====
+// ===== EXPÕE FUNÇÕES PRO HTML =====
+window.sendToBench = sendToBench;
+window.togglePlayerStatus = togglePlayerStatus;
+window.removePlayer = removePlayer;
+window.editPlayerName = editPlayerName;
+window.voltarProBanco = voltarProBanco;
+window.allowDrop = allowDrop;
+window.dragLeave = dragLeave;
+window.dropNoCampo = dropNoCampo;
+window.dropToBench = dropToBench;
+window.dropToAusentes = dropToAusentes;
+window.handleDragStart = handleDragStart;
 window.addEventListener('DOMContentLoaded', () => {
   timeId = urlParams.get('time');
 
