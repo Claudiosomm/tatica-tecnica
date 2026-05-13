@@ -453,6 +453,10 @@ body {
   border-color: #3b82f6;
 }
 
+.player {
+  touch-action: none;
+}
+
 /* BENCH CHIP - MELHORADO */
 .bench-chip {
   display: flex;
