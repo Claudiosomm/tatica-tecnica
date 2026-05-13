@@ -26,257 +26,80 @@ const FORMATIONS = {
   "4-3-2-1": [[1,[50]],[4,[20,38,62,80]],[3,[28,50,72]],[2,[35,65]],[1,[50]]]
 };
 
-// Mapeia número da camisa → posição na formação
-const POSICOES_POR_NUMERO = {
-  "4-4-2": {
-    1: { linha: 0, slot: 0 }, // Goleiro
-    2: { linha: 1, slot: 0 }, // Lat. Direito - fica na direita da tela
-    3: { linha: 1, slot: 3 }, // Lat. Esquerdo - fica na esquerda da tela
-    4: { linha: 1, slot: 1 }, // Zag. Direito
-    5: { linha: 1, slot: 2 }, // Zag. Esquerdo
-    6: { linha: 2, slot: 3 }, // Vol. Esquerdo
-    8: { linha: 2, slot: 2 }, // Vol. Direito
-    7: { linha: 2, slot: 0 }, // Meia Direita
-    10: { linha: 2, slot: 1 }, // Meia Esquerda
-    9: { linha: 3, slot: 0 }, // Atac. Direito
-    11: { linha: 3, slot: 1 } // Atac. Esquerdo
-  },
+const FORMACOES_PREMIUM = ['4-2-3-1','3-5-2','3-4-3','5-3-2','5-4-1','4-1-4-1','4-3-2-1'];
 
-  "4-3-3": {
-    1: { linha: 0, slot: 0 },
-    2: { linha: 1, slot: 3 },
-    3: { linha: 1, slot: 0 },
-    4: { linha: 1, slot: 2 },
-    5: { linha: 1, slot: 1 },
-    6: { linha: 2, slot: 0 }, // Volante
-    8: { linha: 2, slot: 1 }, // Meia direita
-    10: { linha: 2, slot: 2 }, // Meia esquerda
-    7: { linha: 3, slot: 2 }, // Ponta direita
-    9: { linha: 3, slot: 1 }, // Centroavante
-    11: { linha: 3, slot: 0 } // Ponta esquerda
-  },
-  "4-5-1": {
-    1: { linha: 0, slot: 0 },
-    2: { linha: 1, slot: 3 },
-    3: { linha: 1, slot: 0 },
-    4: { linha: 1, slot: 2 },
-    5: { linha: 1, slot: 1 },
-    6: { linha: 2, slot: 1 }, // Volante
-    7: { linha: 2, slot: 4 }, // Meia direita
-    8: { linha: 2, slot: 2 }, // Meia centro
-    10: { linha: 2, slot: 3 }, // Meia esquerda
-    11: { linha: 2, slot: 0 }, // Ponta esquerda
-    9: { linha: 3, slot: 0 } // Atacante
-  }
-};
+function getFormationPositions(key) {
+  const lines = FORMATIONS[key];
+  if (!lines) return [];
+  const n = lines.length;
+  const top = 8, bot = 92, span = bot - top;
+  return lines.flatMap(([,xs], li) => xs.map(x => ({
+    x: x,
+    y: bot - (li/(n-1)) * span
+  })));
+}
 
 function organizarPorNumero() {
   const formacao = currentFormation;
   const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou');
-  
   const MAPAS = {
    "4-4-2": {
-      1: { x: 50, y: 92 }, // GK
-      6: { x: 20, y: 68 }, // LE
-      4: { x: 40, y: 68 }, // ZAG E
-      3: { x: 60, y: 68 }, // ZAG D 
-      2: { x: 80, y: 68 }, // LD
-      10: { x: 20, y: 48 }, // ME
-      5: { x: 40, y: 48 }, // VOL E
-      8: { x: 60, y: 48 }, // VOL D
-      7: { x: 80, y: 48 }, // MD
-      11: { x: 40, y: 28 }, // AE
-      9: { x: 60, y: 28 } // AD
+      1: { x: 50, y: 88 }, 6: { x: 20, y: 68 }, 4: { x: 40, y: 68 }, 3: { x: 60, y: 68 }, 2: { x: 80, y: 68 },
+      10: { x: 20, y: 48 }, 5: { x: 40, y: 48 }, 8: { x: 60, y: 48 }, 7: { x: 80, y: 48 },
+      11: { x: 40, y: 28 }, 9: { x: 60, y: 28 }
     },
     "4-3-3": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 4 atrás
-      6: { x: 20, y: 68 }, // LE
-      3: { x: 40, y: 68 }, // ZAG E
-      4: { x: 60, y: 68 }, // ZAG D
-      2: { x: 80, y: 68 }, // LD
-      
-      // Meio campo em triângulo
-      10: { x: 30, y: 44 }, // ME
-      5: { x: 50, y: 52 }, // VOL - mais recuado
-      8: { x: 70, y: 44 }, // MD
-      
-      // Ataque
-      11: { x: 25, y: 20 }, // PE
-      9: { x: 50, y: 16 }, // CA
-      7: { x: 75, y: 20 } // PD
+      1: { x: 50, y: 88 }, 6: { x: 20, y: 68 }, 3: { x: 40, y: 68 }, 4: { x: 60, y: 68 }, 2: { x: 80, y: 68 },
+      10: { x: 30, y: 44 }, 5: { x: 50, y: 52 }, 8: { x: 70, y: 44 },
+      11: { x: 25, y: 20 }, 9: { x: 50, y: 16 }, 7: { x: 75, y: 20 }
     },
-
-     "4-2-3-1": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 4 atrás
-      6: { x: 20, y: 68 }, // LE
-      4: { x: 40, y: 68 }, // ZAG E
-      3: { x: 60, y: 68 }, // ZAG D
-      2: { x: 80, y: 68 }, // LD
-      
-      // 2 volantes
-      5: { x: 40, y: 52 }, // VOL E
-      8: { x: 60, y: 52 }, // VOL D
-      
-      // Linha de 3 meias
-      10: { x: 25, y: 36 }, // ME
-      7: { x: 50, y: 32 }, // MEIA central - 10 clássico
-      11: { x: 75, y: 36 }, // MD
-      
-      // Ataque
-      9: { x: 50, y: 16 } // CA
+    "4-2-3-1": {
+      1: { x: 50, y: 88 }, 6: { x: 20, y: 68 }, 4: { x: 40, y: 68 }, 3: { x: 60, y: 68 }, 2: { x: 80, y: 68 },
+      5: { x: 40, y: 52 }, 8: { x: 60, y: 52 },
+      10: { x: 25, y: 36 }, 7: { x: 50, y: 32 }, 11: { x: 75, y: 36 },
+      9: { x: 50, y: 16 }
     },
-
    "4-5-1": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 4 atrás
-      6: { x: 20, y: 68 }, // LE
-      3: { x: 40, y: 68 }, // ZAG E
-      4: { x: 60, y: 68 }, // ZAG D
-      2: { x: 80, y: 68 }, // LD
-      
-      // Linha de 5 no meio
-      11: { x: 16, y: 48 }, // ME
-      5: { x: 33, y: 48 }, // VOL E
-      10: { x: 50, y: 48 }, // MEIA central
-      8: { x: 67, y: 48 }, // VOL D
-      7: { x: 84, y: 48 }, // MD
-      
-      // Ataque
-      9: { x: 50, y: 20 } // CA isolado
+      1: { x: 50, y: 88 }, 6: { x: 20, y: 68 }, 3: { x: 40, y: 68 }, 4: { x: 60, y: 68 }, 2: { x: 80, y: 68 },
+      11: { x: 16, y: 48 }, 5: { x: 33, y: 48 }, 10: { x: 50, y: 48 }, 8: { x: 67, y: 48 }, 7: { x: 84, y: 48 },
+      9: { x: 50, y: 20 }
     },
-
-     "3-5-2": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 3 atrás
-      4: { x: 30, y: 70 }, // ZAG E
-      3: { x: 50, y: 74 }, // LÍBERO central - mais recuado
-      5: { x: 70, y: 70 }, // ZAG D
-      
-      // Linha de 5 no meio
-      6: { x: 16, y: 46 }, // ALA E
-      10: { x: 33, y: 46 }, // MEIA E
-      8: { x: 50, y: 50 }, // VOL - mais recuado
-      7: { x: 67, y: 46 }, // MEIA D
-      2: { x: 84, y: 46 }, // ALA D
-      
-      // 2 atacantes
-      11: { x: 40, y: 22 }, // AE
-      9: { x: 60, y: 22 } // AD
+    "3-5-2": {
+      1: { x: 50, y: 88 }, 4: { x: 30, y: 70 }, 3: { x: 50, y: 74 }, 5: { x: 70, y: 70 },
+      6: { x: 16, y: 46 }, 10: { x: 33, y: 46 }, 8: { x: 50, y: 50 }, 7: { x: 67, y: 46 }, 2: { x: 84, y: 46 },
+      11: { x: 40, y: 22 }, 9: { x: 60, y: 22 }
     },
-
     "3-4-3": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 3 atrás
-      4: { x: 30, y: 70 }, // ZAG E
-      3: { x: 50, y: 74 }, // LÍBERO - mais recuado
-      5: { x: 70, y: 70 }, // ZAG D
-      
-      // Linha de 4 no meio
-      6: { x: 20, y: 48 }, // ALA E
-      10: { x: 40, y: 48 }, // MEIA E
-      8: { x: 60, y: 48 }, // MEIA D
-      2: { x: 80, y: 48 }, // ALA D
-      
-      // 3 atacantes
-      7: { x: 25, y: 20 }, // PE
-      11: { x: 50, y: 16 }, // CA - central
-      9: { x: 75, y: 20 } // PD
+      1: { x: 50, y: 88 }, 4: { x: 30, y: 70 }, 3: { x: 50, y: 74 }, 5: { x: 70, y: 70 },
+      6: { x: 20, y: 48 }, 10: { x: 40, y: 48 }, 8: { x: 60, y: 48 }, 2: { x: 80, y: 48 },
+      7: { x: 25, y: 20 }, 11: { x: 50, y: 16 }, 9: { x: 75, y: 20 }
     },
-
     "5-3-2": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 5 atrás
-      6: { x: 15, y: 66 }, // LE
-      4: { x: 32, y: 68 }, // ZAG E
-      5: { x: 50, y: 72 }, // LÍBERO - mais recuado
-      3: { x: 68, y: 68 }, // ZAG D
-      2: { x: 85, y: 66 }, // LD
-      
-      // Meio campo com 3
-      8: { x: 30, y: 44 }, // MEIA E
-      10: { x: 50, y: 40 }, // MEIA central - 10 clássico
-      7: { x: 70, y: 44 }, // MEIA D
-      
-      // 2 atacantes
-      11: { x: 40, y: 20 }, // AE
-      9: { x: 60, y: 20 } // AD
+      1: { x: 50, y: 88 }, 6: { x: 15, y: 66 }, 4: { x: 32, y: 68 }, 5: { x: 50, y: 72 }, 3: { x: 68, y: 68 }, 2: { x: 85, y: 66 },
+      8: { x: 30, y: 44 }, 10: { x: 50, y: 40 }, 7: { x: 70, y: 44 },
+      11: { x: 40, y: 20 }, 9: { x: 60, y: 20 }
     },
-
     "5-4-1": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 5 atrás
-      6: { x: 15, y: 66 }, // LE
-      4: { x: 32, y: 68 }, // ZAG E
-      5: { x: 50, y: 72 }, // LÍBERO - mais recuado
-      3: { x: 68, y: 68 }, // ZAG D
-      2: { x: 85, y: 66 }, // LD
-      
-      // Linha de 4 no meio
-      8: { x: 25, y: 44 }, // ME
-      10: { x: 42, y: 44 }, // MEIA E
-      7: { x: 58, y: 44 }, // MEIA D
-      11: { x: 75, y: 44 }, // MD
-      
-      // Ataque
-      9: { x: 50, y: 20 } // CA isolado
+      1: { x: 50, y: 88 }, 6: { x: 15, y: 66 }, 4: { x: 32, y: 68 }, 5: { x: 50, y: 72 }, 3: { x: 68, y: 68 }, 2: { x: 85, y: 66 },
+      8: { x: 25, y: 44 }, 10: { x: 42, y: 44 }, 7: { x: 58, y: 44 }, 11: { x: 75, y: 44 },
+      9: { x: 50, y: 20 }
     },
-
     "4-1-4-1": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 4 atrás
-      6: { x: 20, y: 68 }, // LE
-      4: { x: 40, y: 68 }, // ZAG E
-      3: { x: 60, y: 68 }, // ZAG D
-      2: { x: 80, y: 68 }, // LD
-      
-      // 1º volante
-      5: { x: 50, y: 56 }, // VOL - na frente da zaga
-      
-      // Linha de 4 no meio
-      8: { x: 20, y: 36 }, // ME
-      10: { x: 40, y: 36 }, // MEIA E
-      7: { x: 60, y: 36 }, // MEIA D
-      11: { x: 80, y: 36 }, // MD
-      
-      // Ataque
-      9: { x: 50, y: 16 } // CA isolado
+      1: { x: 50, y: 88 }, 6: { x: 20, y: 68 }, 4: { x: 40, y: 68 }, 3: { x: 60, y: 68 }, 2: { x: 80, y: 68 },
+      5: { x: 50, y: 56 },
+      8: { x: 20, y: 36 }, 10: { x: 40, y: 36 }, 7: { x: 60, y: 36 }, 11: { x: 80, y: 36 },
+      9: { x: 50, y: 16 }
     },
-
     "4-3-2-1": {
-      1: { x: 50, y: 92 }, // GK
-      
-      // Linha de 4 atrás
-      6: { x: 20, y: 68 }, // LE
-      3: { x: 40, y: 68 }, // ZAG E
-      4: { x: 60, y: 68 }, // ZAG D
-      2: { x: 80, y: 68 }, // LD
-      
-      // Meio campo com 3
-      10: { x: 30, y: 50 }, // MEIA E
-      5: { x: 50, y: 50 }, // VOL central
-      8: { x: 70, y: 50 }, // MEIA D
-      
-      // 2 meias-atacantes
-      7: { x: 40, y: 30 }, // MEIA E avançado
-      11: { x: 60, y: 30 }, // MEIA D avançado
-      
-      // Ataque
-      9: { x: 50, y: 16 } // CA
+      1: { x: 50, y: 88 }, 6: { x: 20, y: 68 }, 3: { x: 40, y: 68 }, 4: { x: 60, y: 68 }, 2: { x: 80, y: 68 },
+      10: { x: 30, y: 50 }, 5: { x: 50, y: 50 }, 8: { x: 70, y: 50 },
+      7: { x: 40, y: 30 }, 11: { x: 60, y: 30 },
+      9: { x: 50, y: 16 }
     }
   };
 
   const mapa = MAPAS[formacao];
-  if (!mapa) return alert(`Formação ${formacao} ainda não mapeada`);
+  if (!mapa) return;
 
   emCampo.forEach(p => {
     const num = parseInt(p.number);
@@ -291,23 +114,9 @@ function organizarPorNumero() {
   renderField();
 }
 
-const FORMACOES_PREMIUM = ['4-2-3-1','3-5-2','3-4-3','5-3-2','5-4-1','4-1-4-1','4-3-2-1'];
-
-function getFormationPositions(key) {
-  const lines = FORMATIONS[key];
-  if (!lines) return [];
-  const n = lines.length;
-  const top = 8, bot = 92, span = bot - top;
-  return lines.flatMap(([,xs], li) => xs.map(x => ({
-    x: x,
-    y: bot - (li/(n-1)) * span
-  })));
-}
-
 function changeFormation() {
   const key = document.getElementById('formation-select').value;
 
-  // Bloqueia premium
   if (FORMACOES_PREMIUM.includes(key) &&!ehPremium()) {
     alert('Formação ' + key + ' é Premium');
     document.getElementById('formation-select').value = currentFormation;
@@ -317,7 +126,6 @@ function changeFormation() {
   currentFormation = key;
   todosTimes[timeId].formacao = key;
 
-  // Reposiciona só quem já tá em campo
   const positions = getFormationPositions(key);
   const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou');
 
@@ -326,49 +134,19 @@ function changeFormation() {
       p.x = positions[i].x;
       p.y = positions[i].y;
     } else {
-      // Se tem mais jogador que posição, joga pro banco
       p.emCampo = false;
       p.x = null;
       p.y = null;
     }
   });
 
-   organizarPorNumero(); // ← ADICIONA ESSA LINHA
-
+  organizarPorNumero();
   salvar();
   renderField();
 }
 
-// Carrega time existente
-if (timeId && todosTimes[timeId]) {
-  timeAtual = todosTimes[timeId];
-  jogadores = timeAtual.jogadores || [];
-  currentFormation = timeAtual.formacao || '4-4-2';
-}
-
-// Se não existe, cria novo
-if (!timeAtual) {
-  timeId = 'time_' + Date.now();
-  timeAtual = {
-    id: timeId,
-    nome: 'Meu Time',
-    jogadores: [],
-    formacao: '4-4-2',
-    atualizado: Date.now()
-  };
-  todosTimes[timeId] = timeAtual;
-  history.replaceState(null, '', '?time=' + timeId);
-}
-
-// Bloqueia multi-time no grátis
-if (Object.keys(todosTimes).length > 1 &&!ehPremium()) {
-  alert('Apenas 1 time no plano grátis. Seja Premium para criar mais times.');
-  window.location.href = 'index.html';
-  throw new Error('Limite de times atingido');
-}
-
-// ===== FUNÇÕES PRINCIPAIS =====
 function salvar() {
+  if (!timeId ||!timeAtual) return;
   todosTimes[timeId].jogadores = jogadores;
   todosTimes[timeId].formacao = currentFormation;
   todosTimes[timeId].atualizado = Date.now();
@@ -384,12 +162,12 @@ window.ehPremium = ehPremium;
 function addPlayer() {
   const nameInput = document.getElementById('new-player-input');
   const numberInput = document.getElementById('new-player-number');
-  
+
   const name = nameInput.value.trim();
   const number = numberInput.value.trim();
-  
+
   if (!name) return alert('Digite o nome do jogador');
-  
+
   const newPlayer = {
     id: Date.now(),
     name: name,
@@ -399,11 +177,11 @@ function addPlayer() {
     x: null,
     y: null
   };
-  
+
   jogadores.push(newPlayer);
   nameInput.value = '';
   numberInput.value = '';
-  
+
   salvar();
   renderAll();
 }
@@ -435,8 +213,8 @@ function renderField() {
       p.x = 50;
       p.y = 80;
     }
-    el.style.left = p.x + '%';
-    el.style.top = p.y + '%';
+    el.style.left = `calc(${p.x}% - 20px)`;
+    el.style.top = `calc(${p.y}% - 20px)`;
     el.onclick = (e) => {
       e.stopPropagation();
       selectPlayerOnField(p.id);
@@ -553,24 +331,41 @@ function togglePlayerStatus(playerId) {
   renderAll();
 }
 
+function editPlayerName(playerId) {
+  selectPlayerOnField(playerId);
+}
+
 function showContextMenu(e, playerId) {
   e.preventDefault();
   e.stopPropagation();
+
   const oldMenu = document.getElementById('context-menu');
   if (oldMenu) oldMenu.remove();
+
   const menu = document.createElement('div');
   menu.id = 'context-menu';
   menu.innerHTML = `
     <div class="context-item" onclick="sendToBench(${playerId}); closeContextMenu();">📤 Enviar pro banco</div>
     <div class="context-item" onclick="togglePlayerStatus(${playerId}); closeContextMenu();">❌ Marcar ausente</div>
+    <div class="context-item" onclick="editPlayerName(${playerId}); closeContextMenu();">✏️ Editar nome</div>
   `;
-  const x = e.clientX || (e.touches && e.touches[0].clientX);
-  const y = e.clientY || (e.touches && e.touches[0].clientY);
+
+  const point = e.changedTouches? e.changedTouches[0] : e.touches? e.touches[0] : e;
+  const x = point.clientX;
+  const y = point.clientY;
+
   document.body.appendChild(menu);
-  menu.style.left = x + 'px';
-  menu.style.top = y + 'px';
+
+  const menuRect = menu.getBoundingClientRect();
+  const maxX = window.innerWidth - menuRect.width - 10;
+  const maxY = window.innerHeight - menuRect.height - 10;
+
+  menu.style.left = Math.min(x, maxX) + 'px';
+  menu.style.top = Math.min(y, maxY) + 'px';
+
   setTimeout(() => {
     document.addEventListener('click', closeContextMenu, { once: true });
+    document.addEventListener('touchstart', closeContextMenu, { once: true });
   }, 10);
 }
 
@@ -647,29 +442,26 @@ function attachFieldDrag(el) {
   el.dataset.moved = 'false';
 
   const startDrag = (e) => {
-    // Botão direito do mouse ignora
     if (e.button && e.button!== 0) return;
 
-    // Pega posição: touch ou mouse
     const point = e.touches? e.touches[0] : e;
-
     e.preventDefault();
     e.stopPropagation();
 
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
 
-    const r = document.getElementById('pitch-container').getBoundingClientRect();
+    const pitch = document.getElementById('pitch-container');
+    const elRect = fDragEl.getBoundingClientRect();
+
     startX = point.clientX;
     startY = point.clientY;
-    fOffX = point.clientX - r.left - parseFloat(fDragEl.style.left)/100 * r.width;
-    fOffY = point.clientY - r.top - parseFloat(fDragEl.style.top)/100 * r.height;
+
+    fOffX = point.clientX - elRect.left;
+    fOffY = point.clientY - elRect.top;
   };
 
-  // Mouse
   el.addEventListener('mousedown', startDrag);
-
-  // Touch - Mobile
   el.addEventListener('touchstart', startDrag, { passive: false });
 }
 
@@ -683,71 +475,104 @@ const moveDrag = (e) => {
   const pitch = document.getElementById('pitch-container');
   if (!pitch) return;
   const r = pitch.getBoundingClientRect();
-  const inside = point.clientX >= r.left && point.clientX <= r.right && point.clientY >= r.top && point.clientY <= r.bottom;
 
-  if (inside) {
-    e.preventDefault();
-    const x = ((point.clientX - r.left - fOffX) / r.width) * 100;
-    const y = ((point.clientY - r.top - fOffY) / r.height) * 100;
-    fDragEl.style.left = Math.max(5, Math.min(95, x)) + '%';
-    fDragEl.style.top = Math.max(5, Math.min(95, y)) + '%';
-  }
+  e.preventDefault();
+
+  let newX = point.clientX - r.left - fOffX;
+  let newY = point.clientY - r.top - fOffY;
+
+  const maxX = r.width - fDragEl.offsetWidth;
+  const maxY = r.height - fDragEl.offsetHeight;
+
+  newX = Math.max(0, Math.min(newX, maxX));
+  newY = Math.max(0, Math.min(newY, maxY));
+
+  fDragEl.style.left = newX + 'px';
+  fDragEl.style.top = newY + 'px';
 };
 
 const endDrag = (e) => {
-  if (fDragEl) {
-    fDragEl.classList.remove('is-dragging');
+  if (!fDragEl) return;
 
-    if (fDragEl.dataset.moved === 'true') {
-      const pitch = document.getElementById('pitch-container');
-      if (pitch) {
-        const point = e.changedTouches? e.changedTouches[0] : e;
-        const r = pitch.getBoundingClientRect();
-        const inside = point.clientX >= r.left && point.clientX <= r.right && point.clientY >= r.top && point.clientY <= r.bottom;
+  fDragEl.classList.remove('is-dragging');
 
-        if (inside) {
-          const id = parseInt(fDragEl.dataset.id);
-          const player = jogadores.find(p => p.id === id);
-          if (player) {
-            player.x = parseFloat(fDragEl.style.left);
-            player.y = parseFloat(fDragEl.style.top);
-            salvar();
-          }
-        }
-      }
+  if (fDragEl.dataset.moved === 'true') {
+    const pitch = document.getElementById('pitch-container');
+    const r = pitch.getBoundingClientRect();
+    const elRect = fDragEl.getBoundingClientRect();
+
+    const centerX = elRect.left - r.left + elRect.width / 2;
+    const centerY = elRect.top - r.top + elRect.height / 2;
+
+    const id = parseInt(fDragEl.dataset.id);
+    const player = jogadores.find(p => p.id === id);
+
+    if (player) {
+      player.x = (centerX / r.width) * 100;
+      player.y = (centerY / r.height) * 100;
+
+      fDragEl.style.left = `calc(${player.x}% - ${elRect.width / 2}px)`;
+      fDragEl.style.top = `calc(${player.y}% - ${elRect.height / 2}px)`;
+
+      salvar();
     }
-    fDragEl.dataset.moved = 'false';
-    fDragEl = null;
   }
+
+  fDragEl.dataset.moved = 'false';
+  fDragEl = null;
 };
 
-// Mouse
 document.addEventListener('mousemove', moveDrag);
 document.addEventListener('mouseup', endDrag);
-
-// Touch - Mobile
 document.addEventListener('touchmove', moveDrag, { passive: false });
 document.addEventListener('touchend', endDrag);
 
-// ===== INIT =====
+// ===== INIT ÚNICO - APAGA OS BLOCOS SOLTOS ABAIXO DISSO =====
 window.addEventListener('DOMContentLoaded', () => {
+  timeId = urlParams.get('time');
+
+  if (timeId && todosTimes[timeId]) {
+    timeAtual = todosTimes[timeId];
+    jogadores = timeAtual.jogadores || [];
+    currentFormation = timeAtual.formacao || '4-4-2';
+  } else {
+    timeId = 'time_' + Date.now();
+    timeAtual = {
+      id: timeId,
+      nome: 'Meu Time',
+      jogadores: [],
+      formacao: '4-4-2',
+      atualizado: Date.now()
+    };
+    todosTimes[timeId] = timeAtual;
+    history.replaceState(null, '', '?time=' + timeId);
+    salvar();
+  }
+
+  if (Object.keys(todosTimes).length > 1 &&!ehPremium()) {
+    alert('Apenas 1 time no plano grátis. Seja Premium para criar mais times.');
+    window.location.href = 'index.html';
+    return;
+  }
+
   const header = document.querySelector('.app-header h1');
-  if (header) header.textContent = todosTimes[timeId].nome;
+  if (header) header.textContent = timeAtual.nome;
 
   const formSelect = document.getElementById('formation-select');
   if (formSelect) {
     formSelect.value = currentFormation;
-    formSelect.onchange = changeFormation; // ← CHAMA A FUNÇÃO CERTA
+    formSelect.onchange = changeFormation;
   }
 
   const tipo = localStorage.getItem('premium_tipo');
   if (tipo) {
     const badge = document.getElementById('premium-badge');
-    badge.textContent = tipo === 'vitalicio'? '👑 VITALÍCIO' : '⭐ PREMIUM';
-    badge.classList.add('show');
+    if (badge) {
+      badge.textContent = tipo === 'vitalicio'? '👑 VITALÍCIO' : '⭐ PREMIUM';
+      badge.classList.add('show');
+    }
   }
 
-  // Eventos dos botões
   const btnAdd = document.querySelector('.add-player-bar button');
   if (btnAdd) btnAdd.onclick = addPlayer;
 
@@ -764,15 +589,11 @@ window.addEventListener('DOMContentLoaded', () => {
   const btnSave = document.getElementById('save-name-btn');
   if (btnSave) btnSave.onclick = savePlayerName;
 
+  console.log('Time carregado:', timeAtual.nome, 'Jogadores:', jogadores.length);
+
+  if (jogadores.some(p => p.emCampo)) {
+    organizarPorNumero();
+  }
+
   renderAll();
 });
-
-
-function debugPosicoes() {
-  const coords = getFormationPositions('4-4-2');
-  console.log('=== COORDENADAS 4-4-2 ===');
-  coords.forEach((c, i) => {
-    console.log(`Pos ${i}: x=${c.x} y=${c.y}`);
-  });
-  console.log('20 = esquerda, 80 = direita');
-}
