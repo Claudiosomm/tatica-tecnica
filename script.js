@@ -275,6 +275,7 @@ function esc(s) {
 }
 
 function voltarProBanco(playerId) {
+  playerId = parseInt(playerId); // ← ESSENCIAL
   const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.status = 'indefinido';
@@ -319,7 +320,10 @@ function savePlayerName() {
 }
 
 function sendToBench(playerId) {
+  playerId = parseInt(playerId); // ← ESSENCIAL
   const player = jogadores.find(p => p.id === playerId);
+  console.log('sendToBench ID:', playerId, 'Player:', player); // DEBUG
+  
   if (player) {
     player.emCampo = false;
     player.x = null;
@@ -330,14 +334,23 @@ function sendToBench(playerId) {
 }
 
 function togglePlayerStatus(playerId) {
+  playerId = parseInt(playerId); // ← ESSENCIAL
   const player = jogadores.find(p => p.id === playerId);
-  if (!player) return;
-  player.status = player.status === 'faltou'? 'indefinido' : 'faltou';
-  player.emCampo = false;
-  player.x = null;
-  player.y = null;
-  salvar();
-  renderAll();
+  console.log('togglePlayerStatus ID:', playerId, 'Player:', player); // DEBUG
+  
+  if (player) {
+    if (player.status === 'faltou') {
+      player.status = 'indefinido';
+      player.emCampo = false;
+    } else {
+      player.status = 'faltou';
+      player.emCampo = false;
+      player.x = null;
+      player.y = null;
+    }
+    salvar();
+    renderAll();
+  }
 }
 
 function editPlayerName(playerId) {
