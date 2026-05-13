@@ -168,11 +168,6 @@ function addPlayer() {
 
   if (!name) return alert('Digite o nome do jogador');
 
-   if (number && jogadores.some(p => p.number === number)) {
-    alert('Já existe um jogador com o número #' + number);
-    return;
-  }
-
   const newPlayer = {
     id: Date.now(),
     name: name,
@@ -377,9 +372,9 @@ function showContextMenu(e, playerId) {
     <div class="context-item" data-action="edit">✏️ Editar nome</div>
   `;
 
-  const point = e.changedTouches? e.changedTouches[0] : e.touches? e.touches[0] : e;
-  const x = point.clientX;
-  const y = point.clientY;
+  const point = e.changedTouches?.[0] ?? e.touches?.[0] ?? e;
+  const x = point.clientX ?? e.clientX;
+  const y = point.clientY ?? e.clientY;
 
   document.body.appendChild(menu);
 
@@ -444,14 +439,17 @@ function dropNoCampo(ev) {
   const player = jogadores.find(p => p.id === id);
   if (!player || player.emCampo || player.status === 'faltou') return;
 
-  const emCampo = jogadores.filter(p => p.emCampo && p.status !== 'faltou').length;
+  const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou').length;
+  const slotsExtras = todosTimes[timeId].slotsExtras || 0;
 
-  if (emCampo >= 11) {
-    alert('Já tem 11 jogadores em campo.');
+  if (!ehPremium() && emCampo >= 15 + slotsExtras) {
+    alert('Limite de 15 jogadores em campo. Seja Premium para mais.');
     return;
   }
 
   const rect = ev.currentTarget.getBoundingClientRect();
+
+  // PEGA COORDENADA DO MOUSE OU TOUCH
   const clientX = ev.changedTouches? ev.changedTouches[0].clientX : ev.clientX;
   const clientY = ev.changedTouches? ev.changedTouches[0].clientY : ev.clientY;
 
@@ -468,8 +466,7 @@ function dropNoCampo(ev) {
 function dropToBench(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
-  const playerId = parseInt(ev.dataTransfer?.getData("text/plain") || window.draggedPlayerId);
-  window.draggedPlayerId = null;
+  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
   const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.emCampo = false;
@@ -483,8 +480,7 @@ function dropToBench(ev) {
 function dropToAusentes(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
-  const playerId = parseInt(ev.dataTransfer?.getData("text/plain") || window.draggedPlayerId);
-  window.draggedPlayerId = null;
+  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
   const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.emCampo = false;
@@ -499,6 +495,7 @@ function dropToAusentes(ev) {
 function attachFieldDrag(el) {
   el.dataset.moved = 'false';
   let longPressTimer = null;
+  let longPressTriggered = false;
 
   const startDrag = (e) => {
     if (e.button && e.button !== 0) return;
@@ -506,6 +503,8 @@ function attachFieldDrag(el) {
     const point = e.touches ? e.touches[0] : e;
     e.preventDefault();
     e.stopPropagation();
+
+    longPressTriggered = false;
 
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
@@ -516,14 +515,24 @@ function attachFieldDrag(el) {
     fOffX = point.clientX - elRect.left;
     fOffY = point.clientY - elRect.top;
 
-    // Long press: segura 500ms sem mover → abre menu
+    // Long press no touch: segura 500ms sem mover → abre menu
     if (e.touches) {
       longPressTimer = setTimeout(() => {
         if (fDragEl && fDragEl.dataset.moved === 'false') {
+          longPressTriggered = true;
           fDragEl.classList.remove('is-dragging');
           fDragEl = null;
           const id = parseInt(el.dataset.id);
-          showContextMenu(e.touches[0], id);
+          // Cria evento fake com as coordenadas do touch para o showContextMenu
+          const fakeEvent = {
+            preventDefault: () => {},
+            stopPropagation: () => {},
+            changedTouches: e.touches,
+            touches: e.touches,
+            clientX: point.clientX,
+            clientY: point.clientY
+          };
+          showContextMenu(fakeEvent, id);
         }
       }, 500);
     }
@@ -538,7 +547,11 @@ function attachFieldDrag(el) {
 
   el.addEventListener('mousedown', startDrag);
   el.addEventListener('touchstart', startDrag, { passive: false });
-  el.addEventListener('touchmove', cancelLongPress, { passive: true });
+  el.addEventListener('touchmove', (e) => {
+    const point = e.touches[0];
+    const moved = Math.abs(point.clientX - startX) > 8 || Math.abs(point.clientY - startY) > 8;
+    if (moved) cancelLongPress();
+  }, { passive: true });
   el.addEventListener('touchend', cancelLongPress, { passive: true });
 }
 
