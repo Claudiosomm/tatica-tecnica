@@ -168,6 +168,11 @@ function addPlayer() {
 
   if (!name) return alert('Digite o nome do jogador');
 
+   if (number && jogadores.some(p => p.number === number)) {
+    alert('Já existe um jogador com o número #' + number);
+    return;
+  }
+
   const newPlayer = {
     id: Date.now(),
     name: name,
@@ -439,17 +444,14 @@ function dropNoCampo(ev) {
   const player = jogadores.find(p => p.id === id);
   if (!player || player.emCampo || player.status === 'faltou') return;
 
-  const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou').length;
-  const slotsExtras = todosTimes[timeId].slotsExtras || 0;
+  const emCampo = jogadores.filter(p => p.emCampo && p.status !== 'faltou').length;
 
-  if (!ehPremium() && emCampo >= 15 + slotsExtras) {
-    alert('Limite de 15 jogadores em campo. Seja Premium para mais.');
+  if (emCampo >= 11) {
+    alert('Já tem 11 jogadores em campo.');
     return;
   }
 
   const rect = ev.currentTarget.getBoundingClientRect();
-
-  // PEGA COORDENADA DO MOUSE OU TOUCH
   const clientX = ev.changedTouches? ev.changedTouches[0].clientX : ev.clientX;
   const clientY = ev.changedTouches? ev.changedTouches[0].clientY : ev.clientY;
 
@@ -466,7 +468,8 @@ function dropNoCampo(ev) {
 function dropToBench(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
-  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
+  const playerId = parseInt(ev.dataTransfer?.getData("text/plain") || window.draggedPlayerId);
+  window.draggedPlayerId = null;
   const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.emCampo = false;
@@ -480,7 +483,8 @@ function dropToBench(ev) {
 function dropToAusentes(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
-  const playerId = parseInt(ev.dataTransfer.getData("text/plain"));
+  const playerId = parseInt(ev.dataTransfer?.getData("text/plain") || window.draggedPlayerId);
+  window.draggedPlayerId = null;
   const player = jogadores.find(p => p.id === playerId);
   if (player) {
     player.emCampo = false;
