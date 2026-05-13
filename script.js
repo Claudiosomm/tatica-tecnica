@@ -498,29 +498,48 @@ function dropToAusentes(ev) {
 
 function attachFieldDrag(el) {
   el.dataset.moved = 'false';
+  let longPressTimer = null;
 
   const startDrag = (e) => {
-    if (e.button && e.button!== 0) return;
+    if (e.button && e.button !== 0) return;
 
-    const point = e.touches? e.touches[0] : e;
+    const point = e.touches ? e.touches[0] : e;
     e.preventDefault();
     e.stopPropagation();
 
     fDragEl = el;
     fDragEl.classList.add('is-dragging');
 
-    const pitch = document.getElementById('pitch-container');
     const elRect = fDragEl.getBoundingClientRect();
-
     startX = point.clientX;
     startY = point.clientY;
-
     fOffX = point.clientX - elRect.left;
     fOffY = point.clientY - elRect.top;
+
+    // Long press: segura 500ms sem mover → abre menu
+    if (e.touches) {
+      longPressTimer = setTimeout(() => {
+        if (fDragEl && fDragEl.dataset.moved === 'false') {
+          fDragEl.classList.remove('is-dragging');
+          fDragEl = null;
+          const id = parseInt(el.dataset.id);
+          showContextMenu(e.touches[0], id);
+        }
+      }, 500);
+    }
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer) {
+      clearTimeout(longPressTimer);
+      longPressTimer = null;
+    }
   };
 
   el.addEventListener('mousedown', startDrag);
   el.addEventListener('touchstart', startDrag, { passive: false });
+  el.addEventListener('touchmove', cancelLongPress, { passive: true });
+  el.addEventListener('touchend', cancelLongPress, { passive: true });
 }
 
 const moveDrag = (e) => {
