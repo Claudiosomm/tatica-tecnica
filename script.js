@@ -238,12 +238,21 @@ function renderBench() {
   const banco = jogadores.filter(p =>!p.emCampo && p.status!== 'faltou');
   bench.innerHTML = banco.length? banco.map(p => `
     <div class="bench-chip" draggable="true" data-id="${p.id}"
-         ondragstart="event.dataTransfer.setData('text/plain', '${p.id}')">
+         ondragstart="handleDragStart(event, ${p.id})"
+         ontouchstart="handleDragStart(event, ${p.id})">
       <span class="status-btn indefinido"></span>
       ${p.number? '#' + p.number + ' ' : ''}${esc(p.name)}
       <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
     </div>
   `).join('') : '<span class="bench-empty">Banco vazio</span>';
+}
+
+function handleDragStart(e, playerId) {
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', playerId);
+  }
+  // Salva o ID globalmente pro touch
+  window.draggedPlayerId = playerId;
 }
 
 function renderAusentes() {
@@ -386,7 +395,10 @@ function dragLeave(ev) {
 function dropNoCampo(ev) {
   ev.preventDefault();
   ev.currentTarget.classList.remove('drag-over');
-  const id = parseInt(ev.dataTransfer.getData("text/plain"));
+
+  const id = parseInt(ev.dataTransfer?.getData("text/plain") || window.draggedPlayerId);
+  window.draggedPlayerId = null;
+
   const player = jogadores.find(p => p.id === id);
   if (!player || player.emCampo || player.status === 'faltou') return;
 
@@ -399,8 +411,13 @@ function dropNoCampo(ev) {
   }
 
   const rect = ev.currentTarget.getBoundingClientRect();
-  const x = ((ev.clientX - rect.left) / rect.width) * 100;
-  const y = ((ev.clientY - rect.top) / rect.height) * 100;
+
+  // PEGA COORDENADA DO MOUSE OU TOUCH
+  const clientX = ev.changedTouches? ev.changedTouches[0].clientX : ev.clientX;
+  const clientY = ev.changedTouches? ev.changedTouches[0].clientY : ev.clientY;
+
+  const x = ((clientX - rect.left) / rect.width) * 100;
+  const y = ((clientY - rect.top) / rect.height) * 100;
 
   player.x = Math.max(5, Math.min(95, x));
   player.y = Math.max(5, Math.min(95, y));
