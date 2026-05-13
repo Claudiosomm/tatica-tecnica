@@ -430,18 +430,13 @@ function renderField() {
     const el = document.createElement('div');
     el.className = 'field-player' + (i === 0? ' gk' : '');
     el.dataset.id = p.id;
-    el.draggable = true;
+    el.draggable = false;
     if (p.x == null || p.y == null) {
       p.x = 50;
       p.y = 80;
     }
     el.style.left = p.x + '%';
     el.style.top = p.y + '%';
-    el.ondragstart = (e) => {
-      e.dataTransfer.setData('text/plain', String(p.id));
-      el.classList.add('is-dragging');
-    };
-    el.ondragend = () => el.classList.remove('is-dragging');
     el.onclick = (e) => {
       e.stopPropagation();
       selectPlayerOnField(p.id);
