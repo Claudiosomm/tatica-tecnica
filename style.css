@@ -1014,3 +1014,20 @@ body {
   background: rgba(59,130,246,0.3);
   transform: translateX(2px);
 }
+
+  /* Força cor no select e nas options */
+  #formation-select {
+    color: #fff;
+    background: #1a1a1a;
+    border: 1px solid #333;
+  }
+  
+  #formation-select option {
+    color: #fff;
+    background: #1a1a1a;
+  }
+
+  #formation-select option:disabled {
+  color: #999 !important; /* antes era #666 */
+  background: #1e1e1e !important;
+}
