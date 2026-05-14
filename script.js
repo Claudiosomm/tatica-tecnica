@@ -9,22 +9,33 @@ let fOffX = 0, fOffY = 0;
 let startX = 0, startY = 0;
 const LIMITE_GRATIS = 13; // DEIXA SÓ AQUI
 
-// MOVE ISSO PRA CÁ 👇
-function podeAdicionarJogador() {
+async function podeAdicionarJogador() {
   if (ehPremium()) return true;
   
-  const totalJogadores = jogadores.filter(p => p.status !== 'faltou').length;
+  const totalJogadores = jogadores.length; // conta campo + banco + ausentes
   
   if (totalJogadores >= LIMITE_GRATIS) {
     return confirm(
       `Limite gratuito: ${LIMITE_GRATIS} jogadores.\n\n` +
-      `Para adicionar mais, assista um anúncio ou seja Pro.\n\n` +
-      `Assistir anúncio agora?`
+      `Para adicionar mais, seja Pro.\n\n` +
+      `Deseja continuar mesmo assim?`
     );
   }
   
   return true;
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 // Pega time da URL
 const urlParams = new URLSearchParams(window.location.search);
@@ -176,9 +187,9 @@ function ehPremium() {
 }
 window.ehPremium = ehPremium;
 
-function addPlayer() {
+async function addPlayer() {
   // CHECA LIMITE ANTES DE TUDO
-  if (!podeAdicionarJogador()) return;
+  if (!await podeAdicionarJogador()) return; // ← await aqui
 
   const nameInput = document.getElementById('new-player-input');
   const numberInput = document.getElementById('new-player-number');
@@ -262,14 +273,21 @@ function renderField() {
   }
 }
 
+function handleDragStart(e, playerId) {
+  if (e.dataTransfer) {
+    e.dataTransfer.setData('text/plain', playerId);
+  }
+  window.draggedPlayerId = playerId;
+}
+
 function renderBench() {
   const bench = document.getElementById('bench-list');
   if (!bench) return;
   
   const banco = jogadores.filter(p => !p.emCampo && p.status !== 'faltou');
   
-  // CONTADOR DE LIMITE - ADICIONA ISSO 👇
-  const totalAtivos = jogadores.filter(p => p.status !== 'faltou').length;
+  // CONTADOR DE LIMITE
+  const totalAtivos = jogadores.length; // conta tudo
   const contador = !ehPremium() ? 
     `<div style="font-size:11px;color:#888;margin-bottom:6px;padding:4px 0;">
       ${totalAtivos}/${LIMITE_GRATIS} jogadores
@@ -285,14 +303,6 @@ function renderBench() {
       <button class="btn-remove" onclick="removePlayer(${p.id})">✕</button>
     </div>
   `).join('') : '<span class="bench-empty">Banco vazio</span>');
-}
-
-function handleDragStart(e, playerId) {
-  if (e.dataTransfer) {
-    e.dataTransfer.setData('text/plain', playerId);
-  }
-  // Salva o ID globalmente pro touch
-  window.draggedPlayerId = playerId;
 }
 
 function renderAusentes() {
