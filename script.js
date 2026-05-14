@@ -25,18 +25,6 @@ async function podeAdicionarJogador() {
   return true;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
 // Pega time da URL
 const urlParams = new URLSearchParams(window.location.search);
 let timeId = urlParams.get('time');
@@ -54,8 +42,7 @@ const FORMATIONS = {
   "4-3-2-1": [[1,[50]],[4,[20,38,62,80]],[3,[28,50,72]],[2,[35,65]],[1,[50]]]
 };
 
-const FORMACOES_PREMIUM = ['4-2-3-1','3-5-2','3-4-3','5-3-2','5-4-1','4-1-4-1','4-3-2-1'];
-
+const FORMACOES_PREMIUM = ['4-3-3','4-2-3-1','4-5-1','3-5-2','3-4-3','5-3-2','5-4-1','4-1-4-1','4-3-2-1'];
 function getFormationPositions(key) {
   const lines = FORMATIONS[key];
   if (!lines) return [];
@@ -145,8 +132,8 @@ function organizarPorNumero() {
 function changeFormation() {
   const key = document.getElementById('formation-select').value;
 
-  if (FORMACOES_PREMIUM.includes(key) &&!ehPremium()) {
-    alert('Formação ' + key + ' é Premium');
+  if (FORMACOES_PREMIUM.includes(key) && !ehPremium()) {
+    alert('Formação ' + key + ' é exclusiva do Pro.\n\nAssine Premium para liberar todas as 10 táticas.'); // ← MUDOU
     document.getElementById('formation-select').value = currentFormation;
     return;
   }
@@ -708,10 +695,21 @@ window.addEventListener('DOMContentLoaded', () => {
   if (header) header.textContent = timeAtual.nome;
 
   const formSelect = document.getElementById('formation-select');
-  if (formSelect) {
-    formSelect.value = currentFormation;
-    formSelect.onchange = changeFormation;
+if (formSelect) {
+  formSelect.value = currentFormation;
+  
+  // TRAVA TUDO MENOS 4-4-2 PRA GRÁTIS 👇
+  if (!ehPremium()) {
+    Array.from(formSelect.options).forEach(opt => {
+      if (opt.value !== '4-4-2') {
+        if (!opt.text.includes('👑')) opt.text = opt.text + ' 👑';
+        opt.disabled = true;
+      }
+    });
   }
+  
+  formSelect.onchange = changeFormation;
+}
 
   const tipo = localStorage.getItem('premium_tipo');
   if (tipo) {
