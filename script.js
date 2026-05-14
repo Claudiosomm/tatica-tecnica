@@ -130,11 +130,11 @@ function changeFormation() {
   const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou');
 
   emCampo.forEach((p, i) => {
-    if (positions[i]) {
+    if (i < 11 && positions[i]) { // SÓ 11 JOGADORES
       p.x = positions[i].x;
       p.y = positions[i].y;
     } else {
-      p.emCampo = false;
+      p.emCampo = false; // RESTO VAI PRO BANCO
       p.x = null;
       p.y = null;
     }
@@ -167,6 +167,16 @@ function addPlayer() {
   const number = numberInput.value.trim();
 
   if (!name) return alert('Digite o nome do jogador');
+
+  // BLOQUEIA NÚMERO REPETIDO
+  if (number) {
+    const numeroJaExiste = jogadores.some(p => p.number === number);
+    if (numeroJaExiste) {
+      alert('Já existe um jogador com o número ' + number);
+      numberInput.focus();
+      return;
+    }
+  }
 
   const newPlayer = {
     id: Date.now(),
@@ -439,17 +449,15 @@ function dropNoCampo(ev) {
   const player = jogadores.find(p => p.id === id);
   if (!player || player.emCampo || player.status === 'faltou') return;
 
+  // LIMITE DE 11 EM CAMPO
   const emCampo = jogadores.filter(p => p.emCampo && p.status!== 'faltou').length;
-  const slotsExtras = todosTimes[timeId].slotsExtras || 0;
 
-  if (!ehPremium() && emCampo >= 15 + slotsExtras) {
-    alert('Limite de 15 jogadores em campo. Seja Premium para mais.');
+  if (emCampo >= 11) {
+    alert('Máximo de 11 jogadores em campo. Tire alguém antes de adicionar.');
     return;
   }
 
   const rect = ev.currentTarget.getBoundingClientRect();
-
-  // PEGA COORDENADA DO MOUSE OU TOUCH
   const clientX = ev.changedTouches? ev.changedTouches[0].clientX : ev.clientX;
   const clientY = ev.changedTouches? ev.changedTouches[0].clientY : ev.clientY;
 
