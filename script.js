@@ -9,20 +9,173 @@ let fOffX = 0, fOffY = 0;
 let startX = 0, startY = 0;
 const LIMITE_GRATIS = 13; // DEIXA SÓ AQUI
 
+// ===== SISTEMA DE VÍDEO REWARD =====
+function criarModalVideo(mensagem, callback) {
+  // Remove modal anterior se existir
+  const old = document.getElementById('modal-video');
+  if (old) old.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-video';
+  modal.style.cssText = `
+    position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:9999;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;
+    padding:20px;
+  `;
+
+  modal.innerHTML = `
+    <div style="background:#1e293b;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center;border:1px solid rgba(255,255,255,.1);">
+      <div style="font-size:36px;margin-bottom:12px;">🎬</div>
+      <h3 style="color:#f1f5f9;font-size:17px;margin:0 0 10px;font-weight:700;">Recurso Pro</h3>
+      <p style="color:#94a3b8;font-size:14px;margin:0 0 20px;line-height:1.5;">${mensagem}</p>
+      
+      <div id="video-box" style="background:#0f172a;border-radius:10px;overflow:hidden;margin-bottom:16px;position:relative;min-height:90px;display:flex;align-items:center;justify-content:center;">
+        <div id="video-placeholder" style="color:#475569;font-size:13px;padding:20px;text-align:center;">
+          <div style="font-size:28px;margin-bottom:8px;">▶️</div>
+          Toque para assistir o anúncio
+        </div>
+        <!-- Cole aqui sua tag de vídeo/anúncio real -->
+        <!-- Exemplo: <iframe src="URL_DO_SEU_ANUNCIO" style="width:100%;height:180px;border:none;" id="video-iframe"></iframe> -->
+      </div>
+
+      <div id="btn-video-wrap">
+        <button id="btn-assistir" onclick="iniciarVideo()" style="
+          width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;
+          background:linear-gradient(135deg,#3b82f6,#6366f1);color:#fff;
+          font-size:14px;font-weight:700;margin-bottom:10px;
+        ">▶ Assistir anúncio (${window._videoDuracao || 15}s)</button>
+        <button onclick="fecharModalVideo()" style="
+          width:100%;padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,.15);
+          background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;
+        ">Cancelar</button>
+      </div>
+
+      <div id="video-progresso" style="display:none;margin-top:8px;">
+        <div style="background:#0f172a;border-radius:6px;height:6px;overflow:hidden;margin-bottom:8px;">
+          <div id="barra-progresso" style="background:#3b82f6;height:100%;width:0%;transition:width 1s linear;border-radius:6px;"></div>
+        </div>
+        <span id="video-contador" style="color:#94a3b8;font-size:12px;">Aguarde...</span>
+      </div>
+
+      <div id="btn-liberar-wrap" style="display:none;margin-top:12px;">
+        <button id="btn-liberar" onclick="liberarPorVideo()" style="
+          width:100%;padding:12px;border-radius:10px;border:none;cursor:pointer;
+          background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;
+          font-size:14px;font-weight:700;
+        ">✅ Liberar agora!</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+  window._videoCallback = callback;
+}
+
+let _videoTimer = null;
+function iniciarVideo() {
+  const duracao = window._videoDuracao || 15;
+  document.getElementById('btn-video-wrap').style.display = 'none';
+  document.getElementById('video-progresso').style.display = 'block';
+
+  // Aqui você pode disparar o vídeo/anúncio real — ex: chamar SDK do AdMob/Unity Ads
+  // Por enquanto simula o timer
+  let segundos = 0;
+  const barra = document.getElementById('barra-progresso');
+  const contador = document.getElementById('video-contador');
+
+  _videoTimer = setInterval(() => {
+    segundos++;
+    const pct = (segundos / duracao) * 100;
+    barra.style.width = pct + '%';
+    contador.textContent = `Assistindo... ${segundos}/${duracao}s`;
+
+    if (segundos >= duracao) {
+      clearInterval(_videoTimer);
+      contador.textContent = '✅ Anúncio concluído!';
+      barra.style.background = '#22c55e';
+      document.getElementById('btn-liberar-wrap').style.display = 'block';
+    }
+  }, 1000);
+}
+
+function fecharModalVideo() {
+  if (_videoTimer) clearInterval(_videoTimer);
+  const modal = document.getElementById('modal-video');
+  if (modal) modal.remove();
+  window._videoCallback = null;
+}
+
+function liberarPorVideo() {
+  if (_videoTimer) clearInterval(_videoTimer);
+  const cb = window._videoCallback;
+  fecharModalVideo();
+  if (cb) cb();
+}
+
+// ===== CONTROLE DE PERMISSÕES =====
 async function podeAdicionarJogador() {
   if (ehPremium()) return true;
-  
-  const totalJogadores = jogadores.length; // conta campo + banco + ausentes
-  
-  if (totalJogadores >= LIMITE_GRATIS) {
-    return confirm(
-      `Limite gratuito: ${LIMITE_GRATIS} jogadores.\n\n` +
-      `Para adicionar mais, seja Pro.\n\n` +
-      `Deseja continuar mesmo assim?`
+  if (jogadores.length < LIMITE_GRATIS) return true;
+
+  // 14º jogador em diante: precisa assistir vídeo
+  return new Promise(resolve => {
+    window._videoDuracao = 15;
+    criarModalVideo(
+      `Você atingiu o limite de <strong style="color:#f1f5f9">${LIMITE_GRATIS} jogadores</strong> do plano gratuito.<br><br>Assista um anúncio curto para adicionar mais um jogador.`,
+      () => resolve(true)
     );
-  }
-  
-  return true;
+    // Se fechar sem assistir, resolve false (o fecharModalVideo não chama callback)
+    // Precisamos de um hook no cancelar:
+    const cancelBtn = document.querySelector('#modal-video button:last-child');
+    // Já trata via fecharModalVideo que não chama callback → Promise fica pendente
+    // Adicionamos listener no modal para detectar remoção
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('modal-video')) {
+        observer.disconnect();
+        if (window._videoCallback) { window._videoCallback = null; resolve(false); }
+      }
+    });
+    observer.observe(document.body, { childList: true });
+  });
+}
+
+async function podeRemoverJogador() {
+  if (ehPremium()) return true;
+  if (jogadores.length <= LIMITE_GRATIS) return true;
+  // Só pede vídeo se estiver acima do limite (para impedir "remover e adicionar de graça")
+  return new Promise(resolve => {
+    window._videoDuracao = 15;
+    criarModalVideo(
+      `Para liberar uma vaga e adicionar outro jogador, assista um anúncio curto.`,
+      () => resolve(true)
+    );
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('modal-video')) {
+        observer.disconnect();
+        if (window._videoCallback) { window._videoCallback = null; resolve(false); }
+      }
+    });
+    observer.observe(document.body, { childList: true });
+  });
+}
+
+async function podeUsarFormacao(key) {
+  if (key === '4-4-2') return true;
+  if (ehPremium()) return true;
+  return new Promise(resolve => {
+    window._videoDuracao = 15;
+    criarModalVideo(
+      `A formação <strong style="color:#f1f5f9">${key}</strong> é exclusiva do plano Pro.<br><br>Assista um anúncio para usá-la gratuitamente por esta sessão.`,
+      () => resolve(true)
+    );
+    const observer = new MutationObserver(() => {
+      if (!document.getElementById('modal-video')) {
+        observer.disconnect();
+        if (window._videoCallback) { window._videoCallback = null; resolve(false); }
+      }
+    });
+    observer.observe(document.body, { childList: true });
+  });
 }
 
 // Pega time da URL
@@ -116,12 +269,30 @@ function organizarPorNumero() {
   const mapa = MAPAS[formacao];
   if (!mapa) return;
 
+  // 1ª passagem: posiciona jogadores que têm número mapeado
+  const slotsOcupados = new Set();
   emCampo.forEach(p => {
     const num = parseInt(p.number);
     const pos = mapa[num];
     if (pos) {
       p.x = pos.x;
       p.y = pos.y;
+      slotsOcupados.add(num);
+    }
+  });
+
+  // 2ª passagem: jogadores sem número mapeado herdam os slots vagos (na ordem do mapa)
+  const slotsSobra = Object.entries(mapa)
+    .filter(([num]) => !slotsOcupados.has(parseInt(num)))
+    .map(([, pos]) => pos);
+
+  let idx = 0;
+  emCampo.forEach(p => {
+    const num = parseInt(p.number);
+    if (!mapa[num] && idx < slotsSobra.length) {
+      p.x = slotsSobra[idx].x;
+      p.y = slotsSobra[idx].y;
+      idx++;
     }
   });
 
@@ -129,13 +300,15 @@ function organizarPorNumero() {
   renderField();
 }
 
-function changeFormation() {
+async function changeFormation() {
   const key = document.getElementById('formation-select').value;
 
   if (FORMACOES_PREMIUM.includes(key) && !ehPremium()) {
-    alert('Formação ' + key + ' é exclusiva do Pro.\n\nAssine Premium para liberar todas as 10 táticas.'); // ← MUDOU
-    document.getElementById('formation-select').value = currentFormation;
-    return;
+    const liberou = await podeUsarFormacao(key);
+    if (!liberou) {
+      document.getElementById('formation-select').value = currentFormation;
+      return;
+    }
   }
 
   currentFormation = key;
@@ -214,9 +387,11 @@ async function addPlayer() {
   renderAll();
 }
 
-function removePlayer(id) {
+async function removePlayer(id) {
   if (!confirm('Remover jogador?')) return;
-  jogadores = jogadores.filter(p => p.id!== id);
+  const precisaVideo = await podeRemoverJogador();
+  if (!precisaVideo) return;
+  jogadores = jogadores.filter(p => p.id !== id);
   salvar();
   renderAll();
 }
@@ -698,12 +873,12 @@ window.addEventListener('DOMContentLoaded', () => {
 if (formSelect) {
   formSelect.value = currentFormation;
   
-  // TRAVA TUDO MENOS 4-4-2 PRA GRÁTIS 👇
+  // MARCA COM 👑 mas NÃO desabilita — vídeo libera ao clicar
   if (!ehPremium()) {
     Array.from(formSelect.options).forEach(opt => {
       if (opt.value !== '4-4-2') {
         if (!opt.text.includes('👑')) opt.text = opt.text + ' 👑';
-        opt.disabled = true;
+        // opt.disabled = true; ← REMOVIDO: usuário pode assistir vídeo
       }
     });
   }
