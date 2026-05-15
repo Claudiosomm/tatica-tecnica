@@ -195,6 +195,7 @@ body {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
+  cursor: pointer;
 }
 
 /* ADD PLAYER BAR */
@@ -262,11 +263,6 @@ body {
   transition: all 0.2s;
   box-shadow: 0 2px 8px rgba(59,130,246,0.3);
   white-space: nowrap;
-}
-
-.add-player-bar button:active {
-  transform: scale(.95);
-  background: #2563eb;
 }
 
 .add-player-bar button:active {
@@ -586,12 +582,18 @@ body {
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
   z-index: 9999;
   overflow: hidden;
-  min-width: 180px;
+  min-width: 160px;
   animation: menuIn 0.15s ease;
 }
 @keyframes menuIn {
-  from { transform: scale(0.9); opacity: 0; }
-  to { transform: scale(1); opacity: 1; }
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
 }
 
 .context-item {
@@ -604,11 +606,6 @@ body {
   transition: background 0.2s;
   color: #f1f5f9;
   user-select: none;
-}
-
-.context-item:hover {
-  background: rgba(59,130,246,.2);
-  transition: all 0.15s; /* opcional, só deixa suave */
 }
 
 .context-item.danger {
@@ -697,17 +694,6 @@ body {
   color: #ef4444;
 }
 
-#formation-select {
-  padding: 8px 12px;
-  border-radius: 10px;
-  border: 1px solid rgba(255,255,255,.2);
-  background: rgba(15,23,42,0.6);
-  color: #fff;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
 /* MOBILE - BOLINHAS MAIORES */
 @media (max-width: 768px) {
   .field-player {
@@ -727,44 +713,6 @@ body {
   }
 }
 
-#context-menu {
-  position: fixed;
-  background: rgba(30,41,59,0.98);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,.15);
-  border-radius: 12px;
-  padding: 6px;
-  min-width: 160px;
-  box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-  z-index: 9999;
-  animation: menuIn 0.15s ease;
-}
-
-@keyframes menuIn {
-  from {
-    opacity: 0;
-    transform: scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-.context-item {
-  padding: 12px 16px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.15s;
-  white-space: nowrap;
-}
-
-.context-item:hover {
-  background: rgba(59,130,246,.2);
-}
-
 .context-item:active {
   background: rgba(59, 130, 246, 0.3);
 }
@@ -773,38 +721,6 @@ body {
  .context-item:hover {
     background: rgba(59, 130, 246, 0.2);
   }
-}
-
-.btn-vitalicio {
-  width: 100%;
-  padding: 16px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: #000;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-bottom: 12px;
-}
-
-.btn-premium {
-  width: 100%;
-  padding: 16px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  color: #fff;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-bottom: 12px;
-  transition: all 0.2s;
-}
-
-.btn-premium:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(59,130,246,0.4);
 }
 
 .btn-vitalicio {
@@ -913,48 +829,9 @@ body {
   margin-bottom: 12px;
   transition: all 0.2s;
 }
-
 .btn-premium:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 24px rgba(59,130,246,0.4);
-}
-
-.btn-vitalicio {
-  width: 100%;
-  padding: 16px;
-  border-radius: 12px;
-  border: none;
-  background: linear-gradient(135deg, #fbbf24, #f59e0b);
-  color: #000;
-  font-size: 16px;
-  font-weight: 700;
-  cursor: pointer;
-  margin-bottom: 12px;
-  transition: all 0.2s;
-  position: relative;
-  overflow: hidden;
-}
-
-.btn-vitalicio:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(251,191,36,0.4);
-}
-
-.btn-vitalicio::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(45deg, transparent, rgba(255,255,255,.3), transparent);
-  transform: rotate(45deg);
-  animation: shine 3s infinite;
-}
-
-@keyframes shine {
-  0% { transform: translateX(-100%) translateY(-100%) rotate(45deg); }
-  100% { transform: translateX(100%) translateY(100%) rotate(45deg); }
 }
 
 .btn-close {
@@ -1016,11 +893,6 @@ body {
 }
 
   /* Força cor no select e nas options */
-  #formation-select {
-    color: #fff;
-    background: #1a1a1a;
-    border: 1px solid #333;
-  }
   
   #formation-select option {
     color: #fff;
